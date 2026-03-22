@@ -138,6 +138,7 @@ class ScanOrchestrator:
                     1 for c in capture_result.cookies if c.get("third_party", False)
                 ),
                 "resource_tree": capture_result.resource_tree,
+                "hostname_ips": {h: list(ips) for h, ips in capture_result.hostname_ips.items()},
             }
             scan.status = "done"
             scan.completed_at = datetime.now(timezone.utc)

@@ -257,7 +257,34 @@ class CaptureService:
             if domain != root_domain and domain not in all_children:
                 tree["children"].append(build_node(domain, {root_domain, domain}))
 
+        # Add all discovered hostnames that aren't already in the tree.
+        # Many domains are loaded directly (no Referer) and would otherwise
+        # be missed entirely.
+        tree_domains = self._collect_tree_domains(tree)
+        all_hostnames = set()
+        for entry in har_entries:
+            req_url = entry.get("request", {}).get("url", "")
+            if req_url:
+                hostname = urlparse(req_url).hostname
+                if hostname:
+                    all_hostnames.add(hostname)
+
+        for hostname in sorted(all_hostnames):
+            if hostname not in tree_domains:
+                tree["children"].append({
+                    "domain": hostname,
+                    "count": domain_counts.get(hostname, 0),
+                    "children": [],
+                })
+
         return tree
+
+    def _collect_tree_domains(self, node: dict) -> set[str]:
+        """Recursively collect all domain names present in the tree."""
+        domains = {node.get("domain", "")}
+        for child in node.get("children", []):
+            domains.update(self._collect_tree_domains(child))
+        return domains
 
     @staticmethod
     def classify_third_party(scan_url: str, hostname: str) -> bool:
