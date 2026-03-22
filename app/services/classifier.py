@@ -11,11 +11,20 @@ EU_COUNTRIES = {
     "CH",
 }
 
+SOVEREIGNTY_LABELS = {
+    5: "Volledig soeverein",
+    4: "Grotendeels soeverein",
+    3: "Gedeeltelijk soeverein",
+    2: "Beperkt soeverein",
+    1: "Minimaal soeverein",
+    0: "Niet soeverein",
+}
+
 
 @dataclass
 class JurisdictionResult:
-    jurisdiction: str  # "us", "eu", "unknown"
-    cloud_act_risk: bool
+    level: int  # 0-5
+    label: str
     reasons: list[str] = field(default_factory=list)
 
 
@@ -27,35 +36,64 @@ def classify_jurisdiction(
 ) -> JurisdictionResult:
     reasons: list[str] = []
 
-    # Rule 1: US parent company -> always CLOUD Act risk
-    if parent_country == "US":
-        reasons.append(f"Moederbedrijf {parent_company} is Amerikaans")
-        return JurisdictionResult(jurisdiction="us", cloud_act_risk=True, reasons=reasons)
+    parent_in_eu = parent_country is not None and parent_country in EU_COUNTRIES
+    parent_is_non_eu = parent_country is not None and parent_country not in EU_COUNTRIES
+    server_in_eu = geoip.country_code is not None and geoip.country_code in EU_COUNTRIES
+    peeringdb_in_eu = peeringdb is not None and peeringdb.org_country in EU_COUNTRIES
+    peeringdb_known = peeringdb is not None and peeringdb.org_country is not None
 
-    # Rule 2: PeeringDB org country is US
-    if peeringdb and peeringdb.org_country == "US":
-        reasons.append(f"ASN-eigenaar {peeringdb.org_name} is gevestigd in de VS")
-        return JurisdictionResult(jurisdiction="us", cloud_act_risk=True, reasons=reasons)
-
-    # Rule 3: Server physically in US
-    if geoip.country_code == "US":
-        reasons.append("Server staat fysiek in de Verenigde Staten")
-        return JurisdictionResult(jurisdiction="us", cloud_act_risk=True, reasons=reasons)
-
-    # Rule 4: EU server + EU org -> safe
-    if geoip.country_code in EU_COUNTRIES:
-        if peeringdb and peeringdb.org_country in EU_COUNTRIES:
-            reasons.append(f"Server in {geoip.country_code}, eigenaar in {peeringdb.org_country}")
-            return JurisdictionResult(jurisdiction="eu", cloud_act_risk=False, reasons=reasons)
-        if peeringdb is None and parent_country and parent_country in EU_COUNTRIES:
-            reasons.append(f"Server in {geoip.country_code}, moederbedrijf in {parent_country}")
-            return JurisdictionResult(jurisdiction="eu", cloud_act_risk=False, reasons=reasons)
-
-    # Rule 5: Not enough info
-    if geoip.country_code is None and peeringdb is None:
+    # Level 0: no data available, or explicitly non-EU everything
+    if geoip.country_code is None and peeringdb is None and parent_country is None:
         reasons.append("Onvoldoende gegevens voor classificatie")
-        return JurisdictionResult(jurisdiction="unknown", cloud_act_risk=False, reasons=reasons)
+        return JurisdictionResult(level=0, label=SOVEREIGNTY_LABELS[0], reasons=reasons)
 
-    # Rule 6: Non-US, non-EU
-    reasons.append(f"Server in {geoip.country_code or 'onbekend'}, nader onderzoek nodig")
-    return JurisdictionResult(jurisdiction="unknown", cloud_act_risk=False, reasons=reasons)
+    # Level 5: parent in EU AND server in EU AND peeringdb org in EU
+    if parent_in_eu and server_in_eu and peeringdb_in_eu:
+        reasons.append(
+            f"EU-bedrijf ({parent_company} in {parent_country}), "
+            f"server in {geoip.country_code}, "
+            f"netwerkeigenaar {peeringdb.org_name} in {peeringdb.org_country}"
+        )
+        return JurisdictionResult(level=5, label=SOVEREIGNTY_LABELS[5], reasons=reasons)
+
+    # Level 4: parent in EU AND server in EU (peeringdb unknown is OK)
+    if parent_in_eu and server_in_eu:
+        reasons.append(
+            f"EU-bedrijf ({parent_company} in {parent_country}), "
+            f"server in {geoip.country_code}"
+        )
+        if not peeringdb_known:
+            reasons.append("PeeringDB-gegevens niet beschikbaar")
+        return JurisdictionResult(level=4, label=SOVEREIGNTY_LABELS[4], reasons=reasons)
+
+    # Level 3: server in EU AND (parent unknown or peeringdb unknown)
+    if server_in_eu and (parent_country is None or not peeringdb_known):
+        reasons.append(f"Server in {geoip.country_code}")
+        if parent_country is None:
+            reasons.append("Moederbedrijf onbekend")
+        if not peeringdb_known:
+            reasons.append("PeeringDB-gegevens niet beschikbaar")
+        return JurisdictionResult(level=3, label=SOVEREIGNTY_LABELS[3], reasons=reasons)
+
+    # Level 2: non-EU parent AND server in EU
+    if parent_is_non_eu and server_in_eu:
+        reasons.append(
+            f"Moederbedrijf {parent_company} is gevestigd buiten de EU ({parent_country}), "
+            f"maar data staat in {geoip.country_code}"
+        )
+        return JurisdictionResult(level=2, label=SOVEREIGNTY_LABELS[2], reasons=reasons)
+
+    # Level 1: non-EU parent AND server NOT in EU
+    if parent_is_non_eu and not server_in_eu and geoip.country_code is not None:
+        reasons.append(
+            f"Moederbedrijf {parent_company} is gevestigd buiten de EU ({parent_country}), "
+            f"server in {geoip.country_code}"
+        )
+        return JurisdictionResult(level=1, label=SOVEREIGNTY_LABELS[1], reasons=reasons)
+
+    # Level 0: fallback — non-EU everything or unclassifiable
+    reasons.append(
+        f"Server in {geoip.country_code or 'onbekend'}, "
+        f"geen waarborgen voor digitale soevereiniteit vastgesteld"
+    )
+    return JurisdictionResult(level=0, label=SOVEREIGNTY_LABELS[0], reasons=reasons)

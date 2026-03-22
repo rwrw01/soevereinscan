@@ -1,5 +1,6 @@
 import logging
 import uuid
+from collections import Counter
 from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -71,19 +72,18 @@ class ScanOrchestrator:
                     session.add(resource)
 
             # Phase 3: Analyze each unique IP
-            us_count = 0
-            eu_count = 0
-            unknown_count = 0
+            level_counter: Counter[int] = Counter()
+            level_sum = 0
 
             for ip in capture_result.all_ips:
                 geoip_result = self._geoip.lookup(ip) if self._geoip else None
                 if not geoip_result:
-                    unknown_count += 1
+                    level_counter[0] += 1
                     ip_analysis = IpAnalysis(
                         scan_id=scan.id,
                         ip_address=ip,
-                        jurisdiction="unknown",
-                        cloud_act_risk=False,
+                        sovereignty_level=0,
+                        sovereignty_label="Niet soeverein",
                     )
                     session.add(ip_analysis)
                     continue
@@ -112,27 +112,23 @@ class ScanOrchestrator:
                     peeringdb_org_country=peeringdb_result.org_country if peeringdb_result else None,
                     parent_company=parent,
                     parent_company_country=parent_country,
-                    jurisdiction=jurisdiction.jurisdiction,
-                    cloud_act_risk=jurisdiction.cloud_act_risk,
+                    sovereignty_level=jurisdiction.level,
+                    sovereignty_label=jurisdiction.label,
                 )
                 session.add(ip_analysis)
 
-                if jurisdiction.jurisdiction == "us":
-                    us_count += 1
-                elif jurisdiction.jurisdiction == "eu":
-                    eu_count += 1
-                else:
-                    unknown_count += 1
+                level_counter[jurisdiction.level] += 1
+                level_sum += jurisdiction.level
 
             # Phase 4: Summary
-            total = us_count + eu_count + unknown_count
+            total = sum(level_counter.values())
+            level_distribution = {str(k): level_counter.get(k, 0) for k in range(6)}
+            average_level = round(level_sum / total, 1) if total > 0 else 0
+
             scan.summary = {
                 "total_ips": total,
-                "us_count": us_count,
-                "eu_count": eu_count,
-                "unknown_count": unknown_count,
-                "us_percentage": round(us_count / total * 100, 1) if total > 0 else 0,
-                "cloud_act_risk": us_count > 0,
+                "average_level": average_level,
+                "level_distribution": level_distribution,
                 "total_hostnames": len(capture_result.hostname_ips),
                 "third_party_hostnames": len(capture_result.third_party_domains),
                 "cookies_total": len(capture_result.cookies),

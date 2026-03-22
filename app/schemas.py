@@ -45,8 +45,8 @@ class IpAnalysisResponse(BaseModel):
     peeringdb_org_name: str | None
     peeringdb_org_country: str | None
     parent_company: str | None
-    jurisdiction: str
-    cloud_act_risk: bool
+    sovereignty_level: int
+    sovereignty_label: str
 
     model_config = {"from_attributes": True}
 
