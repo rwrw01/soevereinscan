@@ -1,0 +1,49 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+      REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}"
+      LOOKYLOO_URL: "http://lookyloo:5100"
+      GEOLITE2_ASN_PATH: "/data/GeoLite2-ASN.mmdb"
+      GEOLITE2_COUNTRY_PATH: "/data/GeoLite2-Country.mmdb"
+    volumes:
+      - ./app:/app/app
+      - ./data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: soevereinscan
+      POSTGRES_USER: soevereinscan
+      POSTGRES_PASSWORD: change-me
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soevereinscan"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  lookyloo:
+    image: ghcr.io/lookyloo/lookyloo:latest
+    ports:
+      - "5100:5100"
+
+volumes:
+  pg-data:
