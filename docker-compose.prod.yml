@@ -62,8 +62,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      lookyloo:
-        condition: service_healthy
       migrate:
         condition: service_completed_successfully
     labels:
@@ -123,6 +121,8 @@ services:
   redis:
     image: redis:7-alpine
     container_name: redis-soevereinscan
+    user: redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
     networks:
       - ss-internal
     security_opt:
@@ -131,8 +131,8 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp
-      - /data
+      - /tmp:size=16M
+      - /data:size=64M
     deploy:
       resources:
         limits:
@@ -151,6 +151,9 @@ services:
       retries: 5
 
   lookyloo:
+    # NOTE: No ARM64 image available upstream. Enable with --profile lookyloo on amd64 or after building locally.
+    profiles:
+      - lookyloo
     image: ghcr.io/lookyloo/lookyloo:latest
     container_name: lookyloo-soevereinscan
     networks:
