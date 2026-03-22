@@ -52,6 +52,8 @@ class IpAnalysis(Base):
     peeringdb_org_country: Mapped[str | None] = mapped_column(String(2))
     parent_company: Mapped[str | None] = mapped_column(String(255))
     parent_company_country: Mapped[str | None] = mapped_column(String(2))
+    latitude: Mapped[float | None] = mapped_column(Float)
+    longitude: Mapped[float | None] = mapped_column(Float)
     sovereignty_level: Mapped[int] = mapped_column(Integer, default=0)
     sovereignty_label: Mapped[str] = mapped_column(String(50), default="Niet soeverein")
 

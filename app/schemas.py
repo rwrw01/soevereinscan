@@ -42,6 +42,8 @@ class IpAnalysisResponse(BaseModel):
     asn: int | None
     asn_org: str | None
     country_code: str | None
+    latitude: float | None
+    longitude: float | None
     peeringdb_org_name: str | None
     peeringdb_org_country: str | None
     parent_company: str | None

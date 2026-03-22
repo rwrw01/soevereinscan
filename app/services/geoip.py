@@ -9,6 +9,8 @@ class GeoIPResult:
     asn_org: str | None
     country_code: str | None
     city: str | None
+    latitude: float | None
+    longitude: float | None
 
 
 class GeoIPService:
@@ -24,6 +26,8 @@ class GeoIPService:
         asn_org = None
         country_code = None
         city = None
+        latitude = None
+        longitude = None
 
         if asn_data:
             asn = asn_data.get("autonomous_system_number")
@@ -34,8 +38,15 @@ class GeoIPService:
             country_code = country.get("iso_code") if country else None
             city_data = country_data.get("city", {})
             city = city_data.get("names", {}).get("en") if city_data else None
+            location = country_data.get("location", {})
+            if location:
+                latitude = location.get("latitude")
+                longitude = location.get("longitude")
 
-        return GeoIPResult(asn=asn, asn_org=asn_org, country_code=country_code, city=city)
+        return GeoIPResult(
+            asn=asn, asn_org=asn_org, country_code=country_code, city=city,
+            latitude=latitude, longitude=longitude,
+        )
 
     def close(self):
         self._asn_db.close()

@@ -4,9 +4,14 @@ from app.services.geoip import GeoIPService, GeoIPResult
 
 
 def test_geoip_result_structure():
-    result = GeoIPResult(asn=13335, asn_org="Cloudflare, Inc.", country_code="US", city=None)
+    result = GeoIPResult(
+        asn=13335, asn_org="Cloudflare, Inc.", country_code="US", city=None,
+        latitude=37.7749, longitude=-122.4194,
+    )
     assert result.asn == 13335
     assert result.country_code == "US"
+    assert result.latitude == 37.7749
+    assert result.longitude == -122.4194
 
 
 @patch("app.services.geoip.maxminddb.open_database")
@@ -20,6 +25,7 @@ def test_lookup_returns_result(mock_open):
     mock_country_db.get.return_value = {
         "country": {"iso_code": "US"},
         "city": {"names": {"en": "San Francisco"}},
+        "location": {"latitude": 37.7749, "longitude": -122.4194},
     }
     mock_open.side_effect = [mock_asn_db, mock_country_db]
 
@@ -29,6 +35,8 @@ def test_lookup_returns_result(mock_open):
     assert result.asn == 13335
     assert result.asn_org == "Cloudflare, Inc."
     assert result.country_code == "US"
+    assert result.latitude == 37.7749
+    assert result.longitude == -122.4194
 
 
 @patch("app.services.geoip.maxminddb.open_database")
@@ -44,3 +52,5 @@ def test_lookup_handles_missing_data(mock_open):
 
     assert result.asn is None
     assert result.country_code is None
+    assert result.latitude is None
+    assert result.longitude is None

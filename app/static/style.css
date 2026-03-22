@@ -155,6 +155,97 @@ th {
 .badge-level-1 { background: #fb923c; color: #fff; }
 .badge-level-0 { background: #9ca3af; color: #fff; }
 
+/* Resource tree */
+.tree-section {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 1.5rem 2rem; margin: 2rem 0;
+}
+.tree-section h3 { margin-bottom: 0.25rem; }
+.tree-section p { color: #666; font-size: 0.9rem; margin-bottom: 1rem; }
+.resource-tree { font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace; font-size: 0.85rem; }
+.resource-tree ul {
+    list-style: none; padding-left: 1.5rem; border-left: 1px solid #d1d5db; margin: 0;
+}
+.resource-tree > ul { border-left: none; padding-left: 0; }
+.tree-node {
+    padding: 0.25rem 0; cursor: pointer; user-select: none;
+    display: flex; align-items: center; gap: 0.35rem;
+}
+.tree-node:hover { background: #f3f4f6; border-radius: 4px; }
+.tree-toggle {
+    display: inline-block; width: 1rem; text-align: center; font-size: 0.7rem; color: #999;
+    flex-shrink: 0;
+}
+.tree-third-party {
+    background: #fef3c7; padding: 0.1rem 0.4rem; border-radius: 3px;
+}
+.tree-tp-label { font-size: 0.7rem; color: #92400e; margin-left: 0.25rem; }
+.tree-count { color: #999; font-size: 0.8rem; }
+.tree-children-hidden { display: none; }
+
+/* World map */
+.map-section {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 1.5rem 2rem; margin: 2rem 0;
+}
+.map-section h3 { margin-bottom: 0.25rem; }
+.map-section p { color: #666; font-size: 0.9rem; margin-bottom: 1rem; }
+.world-map {
+    background: #1a1a2e; border-radius: 8px; position: relative;
+    overflow: hidden; padding: 1rem;
+}
+.world-map svg { width: 100%; height: auto; display: block; }
+.map-dot {
+    transition: r 0.2s ease;
+}
+.map-dot:hover { filter: brightness(1.3); }
+.map-tooltip {
+    position: absolute; background: rgba(0,0,0,0.85); color: #fff;
+    padding: 0.4rem 0.7rem; border-radius: 4px; font-size: 0.75rem;
+    pointer-events: none; white-space: nowrap; z-index: 10;
+}
+
+/* Choices section */
+.choices-section {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 1.5rem 2rem; margin: 2rem 0;
+}
+.choices-section h3 { margin-bottom: 0.25rem; }
+.choices-section > p { color: #666; font-size: 0.9rem; margin-bottom: 1rem; }
+
+.choice-category { margin-bottom: 0.5rem; }
+
+.choice-item {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.5rem 0.75rem; border-radius: 6px;
+    border-left: 3px solid transparent;
+    margin-bottom: 0.25rem;
+    background: #f8f9fa;
+}
+.choice-item-ok { border-left-color: #15803d; background: #f0fdf4; }
+.choice-item-warn { border-left-color: #f97316; background: #fff7ed; }
+
+.choice-dot { font-size: 1rem; flex-shrink: 0; }
+.choice-info { flex: 1; font-size: 0.9rem; font-weight: 500; }
+.choice-level { font-size: 0.72rem; flex-shrink: 0; }
+.choice-changeable {
+    font-size: 0.7rem; color: #92400e; background: #fef3c7;
+    padding: 0.1rem 0.4rem; border-radius: 3px; flex-shrink: 0;
+}
+.choice-empty { color: #999; font-style: italic; font-size: 0.9rem; }
+
+.choice-tip {
+    margin-top: 1rem; padding: 0.75rem 1rem;
+    background: #f0fdf4; border-left: 4px solid #10b981;
+    border-radius: 0 8px 8px 0; font-size: 0.85rem; color: #166534;
+    display: flex; align-items: flex-start; gap: 0.5rem;
+}
+.choice-tip-icon { font-size: 1rem; flex-shrink: 0; }
+
+/* Tree enhancements */
+.tree-domain { font-weight: 600; }
+.tree-host { color: #666; font-size: 0.8rem; font-weight: 400; }
+
 @media (max-width: 600px) {
     .scan-form form { flex-direction: column; }
     table { font-size: 0.82rem; }
@@ -162,4 +253,8 @@ th {
     .level-explanation { padding: 1rem; }
     .level-distribution-section { padding: 1rem; }
     .dist-label { min-width: 140px; font-size: 0.78rem; }
+    .choices-section { padding: 1rem; }
+    .tree-section { padding: 1rem; }
+    .map-section { padding: 1rem; }
+    .choice-item { flex-wrap: wrap; }
 }

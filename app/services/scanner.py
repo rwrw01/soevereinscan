@@ -108,6 +108,8 @@ class ScanOrchestrator:
                     asn_org=geoip_result.asn_org,
                     country_code=geoip_result.country_code,
                     city=geoip_result.city,
+                    latitude=geoip_result.latitude,
+                    longitude=geoip_result.longitude,
                     peeringdb_org_name=peeringdb_result.org_name if peeringdb_result else None,
                     peeringdb_org_country=peeringdb_result.org_country if peeringdb_result else None,
                     parent_company=parent,
@@ -135,6 +137,7 @@ class ScanOrchestrator:
                 "third_party_cookies": sum(
                     1 for c in capture_result.cookies if c.get("third_party", False)
                 ),
+                "resource_tree": capture_result.resource_tree,
             }
             scan.status = "done"
             scan.completed_at = datetime.now(timezone.utc)

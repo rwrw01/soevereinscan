@@ -20,6 +20,7 @@ class CaptureResult:
     third_party_domains: set[str] = field(default_factory=set)
     redirects: list[str] = field(default_factory=list)
     screenshot: bytes | None = None
+    resource_tree: dict | None = None
     error: str | None = None
 
 
@@ -124,6 +125,12 @@ class CaptureService:
             except Exception:
                 logger.debug("har2tree cookie analysis failed, using basic cookies", exc_info=True)
 
+            # Build resource tree from HAR entries
+            try:
+                result.resource_tree = self._build_resource_tree(har_entries, url)
+            except Exception:
+                logger.debug("Resource tree building failed", exc_info=True)
+
         except ImportError:
             logger.error("playwrightcapture not installed")
             result.error = "playwrightcapture not installed"
@@ -180,6 +187,77 @@ class CaptureService:
         except Exception:
             logger.debug("har2tree analysis failed", exc_info=True)
             return []
+
+    def _build_resource_tree(self, har_entries: list[dict], url: str) -> dict | None:
+        """Build a domain dependency tree from HAR entries using the Referer header."""
+        scan_domain = urlparse(url).netloc
+
+        # Count requests per domain and track parent-child via Referer
+        domain_counts: dict[str, int] = {}
+        children_map: dict[str, set[str]] = {}
+
+        for entry in har_entries:
+            req = entry.get("request", {})
+            req_url = req.get("url", "")
+            if not req_url:
+                continue
+
+            hostname = urlparse(req_url).hostname
+            if not hostname:
+                continue
+
+            domain_counts[hostname] = domain_counts.get(hostname, 0) + 1
+
+            # Determine parent via Referer header
+            headers = req.get("headers", [])
+            referer = None
+            for h in headers:
+                if h.get("name", "").lower() == "referer":
+                    referer = h.get("value", "")
+                    break
+
+            if referer:
+                parent_host = urlparse(referer).hostname
+                if parent_host and parent_host != hostname:
+                    if parent_host not in children_map:
+                        children_map[parent_host] = set()
+                    children_map[parent_host].add(hostname)
+
+        if not domain_counts:
+            return None
+
+        # Determine which domains are children of other domains
+        all_children: set[str] = set()
+        for kids in children_map.values():
+            all_children.update(kids)
+
+        def build_node(domain: str, visited: set[str]) -> dict:
+            node: dict = {
+                "domain": domain,
+                "count": domain_counts.get(domain, 0),
+                "children": [],
+            }
+            if domain in visited:
+                return node
+            visited = visited | {domain}
+            for child in sorted(children_map.get(domain, [])):
+                node["children"].append(build_node(child, visited))
+            return node
+
+        # Root is the scan domain; if absent, pick the domain with highest count
+        root_domain = scan_domain if scan_domain in domain_counts else max(
+            domain_counts, key=lambda d: domain_counts[d]
+        )
+
+        visited: set[str] = set()
+        tree = build_node(root_domain, visited)
+
+        # Add orphan domains (not root, not a child of anyone) as root children
+        for domain in sorted(domain_counts):
+            if domain != root_domain and domain not in all_children:
+                tree["children"].append(build_node(domain, {root_domain, domain}))
+
+        return tree
 
     @staticmethod
     def classify_third_party(scan_url: str, hostname: str) -> bool:

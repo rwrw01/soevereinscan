@@ -194,6 +194,422 @@ function renderResults(data) {
 
         tbody.appendChild(row);
     }
+
+    // New features: choices, tree, map
+    if (summary.resource_tree) {
+        renderTree(summary.resource_tree, data.url, ipList);
+    }
+    renderChoices(summary.resource_tree, ipList, data.url);
+    renderMap(ipList);
+}
+
+function extractDomain(url) {
+    try {
+        return new URL(url).hostname;
+    } catch (_) {
+        return url;
+    }
+}
+
+function findIpForDomain(domain, ipAnalyses) {
+    for (const ip of ipAnalyses) {
+        if (ip.domains && ip.domains.indexOf(domain) !== -1) return ip;
+        if (ip.hostname === domain) return ip;
+    }
+    return null;
+}
+
+function categorizeDomain(domain) {
+    const d = domain.toLowerCase();
+    if (/analytics|gtag|ga\.|google-analytics|googletagmanager/.test(d)) return "Analytics";
+    if (/fonts\.|typekit/.test(d)) return "Lettertypen";
+    if (/pixel|track|pinterest|facebook|doubleclick|fb\.com/.test(d)) return "Tracking";
+    if (/cdn\.|cloudfront|akamai|fastly|cloudflare/.test(d)) return "CDN";
+    return "Overig";
+}
+
+function isThirdParty(domain, scanUrl) {
+    const scanDomain = extractDomain(scanUrl);
+    const scanParts = scanDomain.split(".");
+    const domParts = domain.split(".");
+    const scanBase = scanParts.slice(-2).join(".");
+    const domBase = domParts.slice(-2).join(".");
+    return domBase !== scanBase;
+}
+
+function collectTreeDomains(node, list) {
+    if (!node) return list;
+    list.push(node);
+    if (node.children) {
+        for (const child of node.children) {
+            collectTreeDomains(child, list);
+        }
+    }
+    return list;
+}
+
+/* Feature 1: Resource Tree */
+function renderTree(treeData, scanUrl, ipAnalyses) {
+    const container = document.getElementById("resource-tree");
+    if (!container || !treeData) return;
+    container.textContent = "";
+
+    function buildNode(node, depth) {
+        const li = document.createElement("li");
+        const nodeDiv = document.createElement("div");
+        nodeDiv.className = "tree-node";
+
+        const thirdParty = isThirdParty(node.domain || "", scanUrl);
+        if (thirdParty) nodeDiv.classList.add("tree-third-party");
+
+        const hasChildren = node.children && node.children.length > 0;
+        const startCollapsed = depth > 0;
+
+        // Toggle indicator
+        const toggle = document.createElement("span");
+        toggle.className = "tree-toggle";
+        toggle.textContent = hasChildren ? (startCollapsed ? "\u25B6" : "\u25BC") : " ";
+        nodeDiv.appendChild(toggle);
+
+        // Domain name
+        const domainSpan = document.createElement("span");
+        domainSpan.textContent = node.domain || "onbekend";
+        domainSpan.className = "tree-domain";
+        nodeDiv.appendChild(domainSpan);
+
+        // Request count
+        if (node.count) {
+            const countSpan = document.createElement("span");
+            countSpan.className = "tree-count";
+            countSpan.textContent = " (" + node.count + " verzoeken)";
+            nodeDiv.appendChild(countSpan);
+        }
+
+        // Hosting info from ipAnalyses
+        const ipInfo = findIpForDomain(node.domain || "", ipAnalyses);
+        if (ipInfo && ipInfo.asn_org) {
+            const hostSpan = document.createElement("span");
+            hostSpan.className = "tree-host";
+            const country = ipInfo.country_code || "?";
+            hostSpan.textContent = " \u2014 Gehost bij " + ipInfo.asn_org + " (" + country + ")";
+            nodeDiv.appendChild(hostSpan);
+        }
+
+        // Third-party warning marker
+        if (thirdParty) {
+            const warn = document.createElement("span");
+            warn.className = "tree-tp-label";
+            warn.textContent = " \u26A0 Uw keuze";
+            nodeDiv.appendChild(warn);
+        }
+
+        li.appendChild(nodeDiv);
+
+        // Children
+        if (hasChildren) {
+            const childUl = document.createElement("ul");
+            if (startCollapsed) childUl.classList.add("tree-children-hidden");
+            for (const child of node.children) {
+                childUl.appendChild(buildNode(child, depth + 1));
+            }
+            li.appendChild(childUl);
+
+            nodeDiv.addEventListener("click", function () {
+                const hidden = childUl.classList.toggle("tree-children-hidden");
+                toggle.textContent = hidden ? "\u25B6" : "\u25BC";
+            });
+        }
+
+        return li;
+    }
+
+    const rootUl = document.createElement("ul");
+    rootUl.appendChild(buildNode(treeData, 0));
+    container.appendChild(rootUl);
+}
+
+/* Feature 2: World Map */
+function renderMap(ipAnalyses) {
+    const container = document.getElementById("world-map");
+    if (!container) return;
+    container.textContent = "";
+
+    const mapDiv = document.createElement("div");
+    mapDiv.className = "world-map";
+
+    const width = 800;
+    const height = 400;
+    const ns = "http://www.w3.org/2000/svg";
+
+    const svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 " + width + " " + height);
+    svg.setAttribute("role", "img");
+
+    const titleEl = document.createElementNS(ns, "title");
+    titleEl.textContent = "Wereldkaart met serverlocaties";
+    svg.appendChild(titleEl);
+
+    // Background
+    const bg = document.createElementNS(ns, "rect");
+    bg.setAttribute("width", width);
+    bg.setAttribute("height", height);
+    bg.setAttribute("fill", "#1a2332");
+    svg.appendChild(bg);
+
+    // Grid lines
+    for (let lon = -180; lon <= 180; lon += 30) {
+        const x = ((lon + 180) / 360) * width;
+        const line = document.createElementNS(ns, "line");
+        line.setAttribute("x1", x);
+        line.setAttribute("y1", 0);
+        line.setAttribute("x2", x);
+        line.setAttribute("y2", height);
+        line.setAttribute("stroke", "rgba(255,255,255,0.1)");
+        line.setAttribute("stroke-width", "0.5");
+        svg.appendChild(line);
+    }
+    for (let lat = -90; lat <= 90; lat += 30) {
+        const y = ((90 - lat) / 180) * height;
+        const line = document.createElementNS(ns, "line");
+        line.setAttribute("x1", 0);
+        line.setAttribute("y1", y);
+        line.setAttribute("x2", width);
+        line.setAttribute("y2", y);
+        line.setAttribute("stroke", "rgba(255,255,255,0.1)");
+        line.setAttribute("stroke-width", "0.5");
+        svg.appendChild(line);
+    }
+
+    // Sovereignty level colors
+    const levelColors = {
+        5: "#15803d",
+        4: "#22c55e",
+        3: "#eab308",
+        2: "#f97316",
+        1: "#fb923c",
+        0: "#9ca3af",
+    };
+
+    // Cluster IPs by rounded lat/lng
+    const clusters = {};
+    for (const ip of ipAnalyses) {
+        if (ip.latitude == null || ip.longitude == null) continue;
+        const lat = Math.round(ip.latitude * 10) / 10;
+        const lng = Math.round(ip.longitude * 10) / 10;
+        const key = lat + "," + lng;
+        if (!clusters[key]) {
+            clusters[key] = { lat: lat, lng: lng, count: 0, level: 5, ips: [] };
+        }
+        clusters[key].count++;
+        const lvl = getSovereigntyLevel(ip);
+        if (lvl < clusters[key].level) clusters[key].level = lvl;
+        clusters[key].ips.push(ip);
+    }
+
+    // Draw dots
+    for (const key of Object.keys(clusters)) {
+        const c = clusters[key];
+        const cx = ((c.lng + 180) / 360) * width;
+        const cy = ((90 - c.lat) / 180) * height;
+        const r = Math.max(4, Math.min(12, 3 + c.count * 2));
+
+        const circle = document.createElementNS(ns, "circle");
+        circle.setAttribute("cx", cx);
+        circle.setAttribute("cy", cy);
+        circle.setAttribute("r", r);
+        circle.setAttribute("fill", levelColors[c.level] || "#9ca3af");
+        circle.setAttribute("opacity", "0.85");
+        circle.setAttribute("class", "map-dot");
+
+        // Tooltip via title element
+        const ipNames = c.ips.map(function (ip) {
+            return (ip.asn_org || ip.ip_address) + " (" + (ip.country_code || "?") + ")";
+        });
+        const unique = ipNames.filter(function (v, i, a) { return a.indexOf(v) === i; });
+        const tipEl = document.createElementNS(ns, "title");
+        tipEl.textContent = unique.join(", ") + " — niveau " + c.level;
+        circle.appendChild(tipEl);
+
+        svg.appendChild(circle);
+    }
+
+    // "Geen locatiegegevens" message if no dots
+    if (Object.keys(clusters).length === 0) {
+        const txt = document.createElementNS(ns, "text");
+        txt.setAttribute("x", width / 2);
+        txt.setAttribute("y", height / 2);
+        txt.setAttribute("text-anchor", "middle");
+        txt.setAttribute("fill", "rgba(255,255,255,0.5)");
+        txt.setAttribute("font-size", "14");
+        txt.textContent = "Geen locatiegegevens beschikbaar";
+        svg.appendChild(txt);
+    }
+
+    mapDiv.appendChild(svg);
+    container.appendChild(mapDiv);
+}
+
+/* Feature 3: Choices categorization */
+function renderChoices(treeData, ipAnalyses, scanUrl) {
+    const container = document.getElementById("choices-container");
+    if (!container) return;
+    container.textContent = "";
+
+    const allNodes = [];
+    if (treeData) collectTreeDomains(treeData, allNodes);
+
+    if (allNodes.length === 0) {
+        const noData = document.createElement("p");
+        noData.className = "choices-empty";
+        noData.textContent = "Geen afhankelijkheidsboom beschikbaar.";
+        container.appendChild(noData);
+        return;
+    }
+
+    // Build categories
+    const categories = {};
+    const rootDomain = treeData.domain || "";
+
+    for (const node of allNodes) {
+        const domain = node.domain || "";
+        const ipInfo = findIpForDomain(domain, ipAnalyses);
+        const level = ipInfo ? getSovereigntyLevel(ipInfo) : null;
+        const thirdParty = isThirdParty(domain, scanUrl);
+
+        let cat;
+        if (!thirdParty) {
+            cat = "Hosting";
+        } else {
+            cat = categorizeDomain(domain);
+        }
+
+        if (!categories[cat]) categories[cat] = [];
+        categories[cat].push({
+            domain: domain,
+            level: level,
+            org: ipInfo ? (ipInfo.asn_org || "-") : "-",
+            country: ipInfo ? (ipInfo.country_code || "-") : "-",
+            thirdParty: thirdParty,
+        });
+    }
+
+    const levelDots = {
+        5: "\uD83D\uDFE2",  // green circle
+        4: "\uD83D\uDFE2",
+        3: "\uD83D\uDFE1",  // yellow circle
+        2: "\uD83D\uDFE0",  // orange circle
+        1: "\uD83D\uDD34",  // red circle
+        0: "\u26AA",        // white circle
+    };
+
+    // Calculate overall average
+    let totalLevel = 0;
+    let levelCount = 0;
+    for (const cat of Object.keys(categories)) {
+        for (const item of categories[cat]) {
+            if (item.level !== null) {
+                totalLevel += item.level;
+                levelCount++;
+            }
+        }
+    }
+    const currentAvg = levelCount > 0 ? totalLevel / levelCount : 0;
+
+    // Calculate improvement potential (what if third-party tracking/analytics were replaced)
+    let improvedTotal = totalLevel;
+    let improvableCount = 0;
+    for (const cat of Object.keys(categories)) {
+        if (cat === "Hosting" || cat === "CDN") continue;
+        for (const item of categories[cat]) {
+            if (item.thirdParty && item.level !== null && item.level < 4) {
+                improvedTotal += (4 - item.level);
+                improvableCount++;
+            }
+        }
+    }
+    const improvedAvg = levelCount > 0 ? improvedTotal / levelCount : 0;
+
+    // Category display order
+    const catOrder = ["Hosting", "Analytics", "Lettertypen", "Tracking", "CDN", "Overig"];
+
+    for (const cat of catOrder) {
+        if (!categories[cat] || categories[cat].length === 0) continue;
+
+        const catDiv = document.createElement("div");
+        catDiv.className = "choice-category";
+
+        // Deduplicate by domain within category
+        const seen = {};
+        const items = [];
+        for (const item of categories[cat]) {
+            if (!seen[item.domain]) {
+                seen[item.domain] = true;
+                items.push(item);
+            }
+        }
+
+        for (const item of items) {
+            const row = document.createElement("div");
+            row.className = "choice-item";
+            if (item.level !== null && item.level <= 2) {
+                row.classList.add("choice-item-warn");
+            } else if (item.level !== null && item.level >= 4) {
+                row.classList.add("choice-item-ok");
+            }
+
+            const dot = document.createElement("span");
+            dot.className = "choice-dot";
+            dot.textContent = item.level !== null ? (levelDots[item.level] || "\u26AA") : "\u26AA";
+            row.appendChild(dot);
+
+            const info = document.createElement("span");
+            info.className = "choice-info";
+            const label = cat + ": " + item.org;
+            if (item.country !== "-") {
+                info.textContent = label + " (" + item.country + ")";
+            } else {
+                info.textContent = label;
+            }
+            row.appendChild(info);
+
+            if (item.level !== null) {
+                const lvlSpan = document.createElement("span");
+                lvlSpan.className = "choice-level badge badge-level-" + item.level;
+                lvlSpan.textContent = "niveau " + item.level;
+                row.appendChild(lvlSpan);
+            }
+
+            if (item.thirdParty) {
+                const tag = document.createElement("span");
+                tag.className = "choice-changeable";
+                tag.textContent = "be\u00EFnvloedbaar";
+                row.appendChild(tag);
+            }
+
+            catDiv.appendChild(row);
+        }
+
+        container.appendChild(catDiv);
+    }
+
+    // Tip section
+    if (improvableCount > 0 && improvedAvg > currentAvg) {
+        const tip = document.createElement("div");
+        tip.className = "choice-tip";
+
+        const tipIcon = document.createElement("span");
+        tipIcon.className = "choice-tip-icon";
+        // Lightbulb SVG icon (Material Design)
+        tipIcon.textContent = "\uD83D\uDCA1";
+        tip.appendChild(tipIcon);
+
+        const tipText = document.createElement("span");
+        tipText.textContent = "Tip: Door be\u00EFnvloedbare diensten te vervangen door EU-alternatieven stijgt uw gemiddelde niveau van "
+            + currentAvg.toFixed(1) + " naar " + improvedAvg.toFixed(1) + ".";
+        tip.appendChild(tipText);
+
+        container.appendChild(tip);
+    }
 }
 
 // Auto-load results if scan-id is present on the script tag
