@@ -1,14 +1,16 @@
-# Build stage
+# Build stage — install Python dependencies
 FROM python:3.12-slim-bookworm AS builder
 WORKDIR /app
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Install Playwright chromium
-RUN PLAYWRIGHT_BROWSERS_PATH=/browsers \
-    pip install --no-cache-dir playwright && \
-    python -m playwright install --with-deps chromium
+# Browser stage — install Playwright + Chromium
+FROM python:3.12-slim-bookworm AS browser
+ENV PLAYWRIGHT_BROWSERS_PATH=/browsers
+
+RUN pip install --no-cache-dir playwright && \
+    playwright install --with-deps chromium
 
 # Runtime stage
 FROM python:3.12-slim-bookworm AS runtime
@@ -48,7 +50,7 @@ RUN addgroup --system --gid 1001 appgroup && \
     adduser --system --uid 1001 --home /home/appuser appuser
 
 COPY --from=builder /install /usr/local
-COPY --from=builder /browsers /browsers
+COPY --from=browser /browsers /browsers
 RUN chown -R 1001:1001 /browsers
 
 COPY app/ ./app/
