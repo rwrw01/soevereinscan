@@ -37,17 +37,42 @@ class CaptureService:
         try:
             from playwrightcapture import Capture
 
-            async with Capture(browser="chromium") as cap:
-                cap.locale = "nl-NL"
-                cap.timezone_id = "Europe/Amsterdam"
-                cap.color_scheme = "light"
-                await cap.initialize_context()
+            cap = Capture(browser="chromium")
+            cap.locale = "nl-NL"
+            cap.timezone_id = "Europe/Amsterdam"
+            cap.color_scheme = "light"
 
+            # Start Playwright manually so we can add --no-sandbox for containers
+            # This replicates __aenter__ but with custom browser args
+            import os
+            from tempfile import NamedTemporaryFile
+            from playwright.async_api import async_playwright
+
+            os.environ["PW_TEST_SCREENSHOT_NO_FONTS_READY"] = "1"
+            cap.playwright = await async_playwright().start()
+            cap.browser = await cap.playwright.chromium.launch(
+                headless=True,
+                args=[
+                    "--disable-blink-features=AutomationControlled",
+                    "--unsafely-treat-insecure-origin-as-secure",
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                ],
+            )
+            cap._already_captured = set()
+            cap._temp_harfile = NamedTemporaryFile(
+                delete=False, prefix="playwright_capture_har", suffix=".json"
+            )
+            try:
+                await cap.initialize_context()
                 entries = await cap.capture_page(
                     url,
                     max_depth_capture_time=timeout,
                     allow_tracking=True,
                 )
+            finally:
+                await cap.browser.close()
+                await cap.playwright.stop()
 
             if not entries or not entries.get("har"):
                 result.error = "Capture returned no HAR data"
