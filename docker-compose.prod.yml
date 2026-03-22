@@ -1,0 +1,196 @@
+services:
+  # One-shot: run Alembic migrations, then exit
+  migrate:
+    build:
+      context: .
+      target: runtime
+    container_name: soevereinscan-migrate
+    networks:
+      - ss-internal
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+    command: ["python", "-m", "alembic", "upgrade", "head"]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      target: runtime
+    container_name: soevereinscan-app
+    networks:
+      - ss-internal
+      - net-fe-soevereinscan
+    environment:
+      DATABASE_URL: "postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
+      REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}"
+      LOOKYLOO_URL: "http://lookyloo:5100"
+      GEOLITE2_ASN_PATH: "/data/GeoLite2-ASN.mmdb"
+      GEOLITE2_COUNTRY_PATH: "/data/GeoLite2-Country.mmdb"
+      PORT: "8000"
+    secrets:
+      - ripe_atlas_api_key
+      - maxmind_license_key
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,nodev,size=200M
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          pids: 100
+    restart: on-failure:5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      lookyloo:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=net-fe-soevereinscan"
+      - "traefik.http.routers.soevereinscan.rule=Host(`soevereinscan.publicvibes.nl`)"
+      - "traefik.http.routers.soevereinscan.entrypoints=websecure"
+      - "traefik.http.routers.soevereinscan.tls.certresolver=letsencrypt"
+      - "traefik.http.services.soevereinscan.loadbalancer.server.port=8000"
+      - "traefik.http.routers.soevereinscan.middlewares=crowdsec@file,security-headers@file,rate-limit@file"
+
+  postgres:
+    image: postgres:16-alpine@sha256:b7587f3cb74f4f4b2a4f9d67f052edbf95eb93f4fec7c5ada3792546caaf7383
+    container_name: postgres-soevereinscan
+    networks:
+      - ss-internal
+    environment:
+      POSTGRES_DB: soevereinscan
+      POSTGRES_USER: soevereinscan
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+      - FOWNER
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run/postgresql
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          pids: 100
+    restart: on-failure:5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U soevereinscan"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    secrets:
+      - db_password
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis-soevereinscan
+    networks:
+      - ss-internal
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /data
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          pids: 50
+    restart: on-failure:5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  lookyloo:
+    image: ghcr.io/lookyloo/lookyloo:latest
+    container_name: lookyloo-soevereinscan
+    networks:
+      - ss-internal
+      - net-fe-soevereinscan
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          pids: 200
+    restart: on-failure:5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5100')\" || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  pg-data:
+
+networks:
+  ss-internal:
+    internal: true
+  net-fe-soevereinscan:
+    external: true
+
+secrets:
+  db_password:
+    file: ./secrets/db_password
+  ripe_atlas_api_key:
+    file: ./secrets/ripe_atlas_api_key
+  maxmind_license_key:
+    file: ./secrets/maxmind_license_key
