@@ -10,9 +10,7 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp
-      - /var/cache/nginx
-      - /run
+      - /tmp:size=8M
     deploy:
       resources:
         limits:
@@ -20,7 +18,7 @@ services:
           pids: 20
     restart: on-failure:5
     healthcheck:
-      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/ || exit 1"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/')\""]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -30,7 +28,7 @@ services:
       - "traefik.http.routers.scanportal.rule=Host(`scan.publicvibes.nl`)"
       - "traefik.http.routers.scanportal.entrypoints=websecure"
       - "traefik.http.routers.scanportal.tls.certresolver=letsencrypt"
-      - "traefik.http.services.scanportal.loadbalancer.server.port=80"
+      - "traefik.http.services.scanportal.loadbalancer.server.port=8080"
       - "traefik.http.routers.scanportal.middlewares=crowdsec@file,security-headers@file"
 
 networks:
