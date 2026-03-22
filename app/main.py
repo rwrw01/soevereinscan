@@ -28,7 +28,11 @@ def get_orchestrator() -> ScanOrchestrator:
 async def lifespan(app: FastAPI):
     global _orchestrator
 
-    geoip = GeoIPService(asn_path=settings.geolite2_asn_path, country_path=settings.geolite2_country_path)
+    geoip = None
+    try:
+        geoip = GeoIPService(asn_path=settings.geolite2_asn_path, country_path=settings.geolite2_country_path)
+    except FileNotFoundError:
+        logging.warning("GeoLite2 databases not found — GeoIP lookups disabled")
     peeringdb = PeeringDBService(redis_url=settings.redis_url, api_key=settings.peeringdb_api_key)
     ripe_atlas = RipeAtlasService(api_key=settings.ripe_atlas_api_key)
     lookyloo = LookylooClient(lookyloo_url=settings.lookyloo_url)
@@ -43,7 +47,8 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    geoip.close()
+    if geoip:
+        geoip.close()
     await peeringdb.close()
     await ripe_atlas.close()
     _orchestrator = None
