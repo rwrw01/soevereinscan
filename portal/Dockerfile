@@ -2,7 +2,7 @@ FROM python:3.12-alpine
 
 RUN adduser -D -u 1001 appuser
 WORKDIR /srv
-COPY index.html .
+COPY index.html style.css ./
 
 USER 1001
 EXPOSE 8080

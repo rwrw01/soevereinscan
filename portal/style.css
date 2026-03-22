@@ -1,0 +1,189 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: linear-gradient(135deg, #1a2332 0%, #152420 50%, #132b1e 100%);
+    color: #e5e7eb;
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.skip-link {
+    position: absolute;
+    top: -100%;
+    left: 1rem;
+    background: #2ea043;
+    color: #fff;
+    padding: 0.5rem 1rem;
+    border-radius: 0 0 8px 8px;
+    z-index: 100;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.skip-link:focus {
+    top: 0;
+    outline: 3px solid #2ea043;
+}
+
+*:focus-visible {
+    outline: 3px solid #2ea043;
+    outline-offset: 2px;
+}
+
+a { color: #2ea043; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.site-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 960px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.logo {
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+}
+
+.logo-public { color: #fff; }
+.logo-vibes { color: #2ea043; }
+
+.hero {
+    text-align: center;
+    padding: 4rem 2rem 3rem;
+    max-width: 960px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.hero h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+}
+
+.hero .subtitle {
+    font-size: 1.1rem;
+    color: #d1d5db;
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.7;
+}
+
+.scanners {
+    max-width: 960px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 2rem 4rem;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.25rem;
+    flex: 1;
+}
+
+.scanner-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 1.75rem;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s, border-color 0.2s;
+    text-decoration: none;
+    color: inherit;
+}
+
+.scanner-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
+    text-decoration: none;
+}
+
+.card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.scanner-card.blue .card-icon { background: rgba(59, 130, 246, 0.15); color: #3b82f6; }
+.scanner-card.green .card-icon { background: rgba(16, 185, 129, 0.15); color: #10b981; }
+.scanner-card.amber .card-icon { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+.scanner-card.purple .card-icon { background: rgba(139, 92, 246, 0.15); color: #8b5cf6; }
+
+.card-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.5rem;
+}
+
+.card-description {
+    font-size: 0.925rem;
+    color: #9ca3af;
+    line-height: 1.65;
+    margin-bottom: 1.25rem;
+    flex: 1;
+}
+
+.card-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #2ea043;
+    align-self: flex-start;
+    transition: gap 0.2s;
+}
+
+.scanner-card:hover .card-link {
+    gap: 0.6rem;
+}
+
+footer {
+    text-align: center;
+    padding: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    color: #6b7280;
+    font-size: 0.8rem;
+    max-width: 960px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+footer a { color: #6b7280; }
+footer a:hover { color: #9ca3af; }
+
+@media (max-width: 700px) {
+    .site-header { padding: 1rem 1.5rem; }
+    .hero { padding: 3rem 1.5rem 2rem; }
+    .hero h1 { font-size: 1.8rem; }
+    .hero .subtitle { font-size: 0.95rem; }
+    .scanners {
+        grid-template-columns: 1fr;
+        padding: 0 1.5rem 3rem;
+        gap: 1rem;
+    }
+    .scanner-card { padding: 1.5rem; }
+}
