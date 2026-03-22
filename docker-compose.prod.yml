@@ -29,6 +29,8 @@ services:
       GEOLITE2_ASN_PATH: "/data/GeoLite2-ASN.mmdb"
       GEOLITE2_COUNTRY_PATH: "/data/GeoLite2-Country.mmdb"
       PORT: "8000"
+    volumes:
+      - ./data:/data:ro
     secrets:
       - ripe_atlas_api_key
       - maxmind_license_key
