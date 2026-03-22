@@ -7,8 +7,12 @@
     "Google LLC": {"parent": "Google/Alphabet", "country": "US"},
     "Google Cloud": {"parent": "Google/Alphabet", "country": "US"},
     "Cloudflare, Inc.": {"parent": "Cloudflare", "country": "US"},
+    "Cloudflare": {"parent": "Cloudflare", "country": "US"},
     "Akamai Technologies, Inc.": {"parent": "Akamai", "country": "US"},
+    "Akamai International B.V.": {"parent": "Akamai", "country": "US"},
+    "Akamai": {"parent": "Akamai", "country": "US"},
     "Fastly, Inc.": {"parent": "Fastly", "country": "US"},
+    "Fastly": {"parent": "Fastly", "country": "US"},
     "Meta Platforms, Inc.": {"parent": "Meta", "country": "US"},
     "Apple Inc.": {"parent": "Apple", "country": "US"},
     "Oracle Corporation": {"parent": "Oracle", "country": "US"},
@@ -29,5 +33,12 @@
     "Leaseweb Netherlands B.V.": {"parent": "Leaseweb", "country": "NL"},
     "True B.V.": {"parent": "True", "country": "NL"},
     "NLnet Labs": {"parent": "NLnet", "country": "NL"},
-    "SURF B.V.": {"parent": "SURF", "country": "NL"}
+    "SURF B.V.": {"parent": "SURF", "country": "NL"},
+    "Arelion Sweden AB": {"parent": "Arelion", "country": "SE"},
+    "Arelion": {"parent": "Arelion", "country": "SE"},
+    "TrueFullstaq B.V.": {"parent": "Fullstaq", "country": "NL"},
+    "Datacamp Limited": {"parent": "Datacamp", "country": "GB"},
+    "Amazon": {"parent": "Amazon", "country": "US"},
+    "Google": {"parent": "Google/Alphabet", "country": "US"},
+    "Microsoft": {"parent": "Microsoft", "country": "US"}
 }

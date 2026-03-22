@@ -87,9 +87,22 @@ class PeeringDBService:
 
     def get_parent_company(self, org_name: str) -> tuple[str | None, str | None]:
         """Returns (parent_company, parent_country) from us_parent_companies.json."""
+        # Exact match first
         entry = self._parent_companies.get(org_name)
         if entry:
             return entry["parent"], entry["country"]
+
+        # Fuzzy match: check if any key starts with the org_name or vice versa
+        org_lower = org_name.lower().strip()
+        for key, value in self._parent_companies.items():
+            key_lower = key.lower()
+            # "Cloudflare" matches "Cloudflare, Inc."
+            if key_lower.startswith(org_lower) or org_lower.startswith(key_lower):
+                return value["parent"], value["country"]
+            # "Amazon.com" matches "Amazon.com, Inc."
+            if org_lower.split(",")[0].strip() == key_lower.split(",")[0].strip():
+                return value["parent"], value["country"]
+
         return None, None
 
     async def close(self):
