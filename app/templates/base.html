@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SoevereinScan{% endblock %}</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="{{ base }}/static/style.css">
 </head>
 <body>
     <header>
         <div class="header-inner">
-            <h1><a href="/">SoevereinScan</a></h1>
+            <h1><a href="{{ base }}/">SoevereinScan</a></h1>
             <p>Digitale soevereiniteitsscanner voor de Nederlandse publieke sector</p>
         </div>
     </header>
@@ -19,6 +19,7 @@
     <footer>
         <p>Open source onder <a href="https://joinup.ec.europa.eu/licence/eupl-text-eupl-12">EUPL-1.2</a> | <a href="https://publicvibes.nl">PublicVibes.nl</a></p>
     </footer>
+    <script>window.__BASE_PATH__ = "{{ base }}";</script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

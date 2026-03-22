@@ -55,7 +55,7 @@ async def lifespan(app: FastAPI):
     _orchestrator = None
 
 
-app = FastAPI(title="SoevereinScan", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="SoevereinScan", version="0.1.0", lifespan=lifespan, root_path="/soeverein")
 
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 

@@ -1,3 +1,5 @@
+const BASE = window.__BASE_PATH__ || "";
+
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("scan-form");
     if (form) {
@@ -13,14 +15,14 @@ document.addEventListener("DOMContentLoaded", () => {
             statusText.textContent = "Scan wordt gestart...";
 
             try {
-                const res = await fetch("/api/scan", {
+                const res = await fetch(`${BASE}/api/scan`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ url }),
                 });
                 const data = await res.json();
                 if (res.ok) {
-                    window.location.href = `/results/${data.id}`;
+                    window.location.href = `${BASE}/results/${data.id}`;
                 } else {
                     statusText.textContent = `Fout: ${data.detail || "Onbekende fout"}`;
                     btn.disabled = false;
@@ -38,7 +40,7 @@ async function loadResults(scanId) {
     const results = document.getElementById("results");
 
     const poll = async () => {
-        const res = await fetch(`/api/scan/${scanId}`);
+        const res = await fetch(`${BASE}/api/scan/${scanId}`);
         const data = await res.json();
 
         if (data.status === "done") {

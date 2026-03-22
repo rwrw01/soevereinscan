@@ -22,7 +22,7 @@ services:
     container_name: soevereinscan-app
     networks:
       - ss-internal
-      - net-fe-soevereinscan
+      - net-fe-scanportal
     environment:
       DATABASE_URL: "postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
       REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}"
@@ -68,8 +68,8 @@ services:
         condition: service_completed_successfully
     labels:
       - "traefik.enable=true"
-      - "traefik.docker.network=net-fe-soevereinscan"
-      - "traefik.http.routers.soevereinscan.rule=Host(`soevereinscan.publicvibes.nl`)"
+      - "traefik.docker.network=net-fe-scanportal"
+      - "traefik.http.routers.soevereinscan.rule=Host(`scan.publicvibes.nl`) && PathPrefix(`/soeverein`)"
       - "traefik.http.routers.soevereinscan.entrypoints=websecure"
       - "traefik.http.routers.soevereinscan.tls.certresolver=letsencrypt"
       - "traefik.http.services.soevereinscan.loadbalancer.server.port=8000"
@@ -158,7 +158,7 @@ volumes:
 networks:
   ss-internal:
     internal: true
-  net-fe-soevereinscan:
+  net-fe-scanportal:
     external: true
 
 secrets:
