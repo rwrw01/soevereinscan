@@ -1,8 +1,38 @@
 {% extends "base.html" %}
 {% block title %}SoevereinScan — Controleer uw SaaS-leveranciers{% endblock %}
 {% block content %}
+<section class="intro">
+    <h2>Wat is digitale soevereiniteit?</h2>
+    <p>
+        Digitale soevereiniteit betekent dat overheden zelf de regie behouden over hun data,
+        IT-infrastructuur en digitale processen. Wanneer SaaS-diensten worden afgenomen bij
+        bedrijven die onder buitenlandse jurisdicties vallen, kan een buitenlandse overheid
+        in theorie toegang afdwingen tot uw data &mdash; ook als de servers in de EU staan.
+    </p>
+
+    <h3>Waarom is dit belangrijk voor gemeenten?</h3>
+    <p>
+        De Rijksoverheid heeft in december 2025 de <strong>Rijksvisie Digitale Soevereiniteit</strong>
+        gepubliceerd, waarin het belang van controle over data en technologie wordt onderstreept.
+        In januari 2026 heeft DICTU een <strong>toetsingsinstrument</strong> gelanceerd waarmee
+        overheidsorganisaties het soevereiniteitsrisico van hun leveranciers kunnen beoordelen.
+        Gemeenten worden geacht deze risico's actief in kaart te brengen.
+    </p>
+
+    <h3>Wat scant deze tool?</h3>
+    <p>
+        SoevereinScan analyseert welke diensten, servers en jurisdicties betrokken zijn bij
+        een SaaS-applicatie. De tool controleert IP-adressen, ASN-eigenaren, moederbedrijven
+        en hun vestigingsland. Het resultaat is een overzicht van soevereiniteitsrisico's
+        op basis van het DICTU-risicomodel.
+    </p>
+    <p class="note">
+        Gratis, open source en regelgebaseerd. Er wordt geen AI gebruikt voor de bevindingen.
+    </p>
+</section>
+
 <section class="scan-form">
-    <h2>Controleer een SaaS-dienst op soevereiniteit</h2>
+    <h2>Controleer een SaaS-dienst</h2>
     <p>Voer de URL van een cloud- of SaaS-dienst in om te analyseren welke partijen en jurisdicties betrokken zijn.</p>
     <form id="scan-form">
         <input type="url" id="scan-url" name="url" placeholder="https://app.leverancier.nl" required>

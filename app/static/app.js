@@ -55,28 +55,96 @@ async function loadResults(scanId) {
     poll();
 }
 
+function classifyRisk(ip) {
+    const isEuServer = ip.country_code && isEuCountry(ip.country_code);
+    const isUsParent = ip.jurisdiction === "us";
+
+    if (!isUsParent && isEuServer) {
+        return "low";
+    }
+    if (isUsParent && isEuServer) {
+        return "medium";
+    }
+    if (isUsParent || !isEuServer) {
+        return "high";
+    }
+    return "unknown";
+}
+
+function isEuCountry(code) {
+    const euCountries = [
+        "AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR",
+        "DE","GR","HU","IE","IT","LV","LT","LU","MT","NL",
+        "PL","PT","RO","SK","SI","ES","SE",
+        "NO","IS","LI","CH"
+    ];
+    return euCountries.includes(String(code).toUpperCase());
+}
+
+function riskLabel(level) {
+    const labels = {
+        low: "Soeverein",
+        medium: "Aandacht vereist",
+        high: "Significant risico",
+        unknown: "Onbekend"
+    };
+    return labels[level] || "Onbekend";
+}
+
 function renderResults(data) {
     document.getElementById("scan-url").textContent = data.url;
 
     const summary = data.summary || {};
-    document.getElementById("us-count").textContent = summary.us_count || 0;
-    document.getElementById("eu-count").textContent = summary.eu_count || 0;
-    document.getElementById("unknown-count").textContent = summary.unknown_count || 0;
+    const ipList = data.ip_analyses || [];
 
-    const euPct = summary.total_ips > 0
-        ? Math.round((summary.eu_count / summary.total_ips) * 100)
-        : 0;
+    let highCount = 0;
+    let mediumCount = 0;
+    let lowCount = 0;
+    let unknownCount = 0;
+
+    for (const ip of ipList) {
+        const risk = classifyRisk(ip);
+        if (risk === "high") highCount++;
+        else if (risk === "medium") mediumCount++;
+        else if (risk === "low") lowCount++;
+        else unknownCount++;
+    }
+
+    document.getElementById("us-count").textContent = String(highCount);
+    document.getElementById("attention-count").textContent = String(mediumCount);
+    document.getElementById("eu-count").textContent = String(lowCount);
+    document.getElementById("unknown-count").textContent = String(unknownCount);
+
+    const total = ipList.length || 1;
+    const sovereignPct = Math.round((lowCount / total) * 100);
     const meterFill = document.getElementById("meter-fill");
-    meterFill.style.width = `${euPct}%`;
-    meterFill.className = `meter-fill ${euPct >= 80 ? "safe" : euPct >= 50 ? "warning" : "danger"}`;
+    meterFill.style.width = `${sovereignPct}%`;
+
+    if (sovereignPct >= 80) {
+        meterFill.className = "meter-fill safe";
+    } else if (sovereignPct >= 50) {
+        meterFill.className = "meter-fill warning";
+    } else {
+        meterFill.className = "meter-fill danger";
+    }
+
     document.getElementById("meter-label").textContent =
-        `${euPct}% van het verkeer binnen EU-jurisdictie`;
+        `${sovereignPct}% van de infrastructuur is soeverein (EU-bedrijf, EU-servers)`;
 
     const tbody = document.getElementById("ip-tbody");
     tbody.textContent = "";
-    for (const ip of data.ip_analyses) {
+
+    for (const ip of ipList) {
+        const risk = classifyRisk(ip);
         const row = document.createElement("tr");
-        row.className = ip.cloud_act_risk ? "row-danger" : "row-safe";
+
+        if (risk === "high") {
+            row.className = "row-danger";
+        } else if (risk === "medium") {
+            row.className = "row-warning";
+        } else {
+            row.className = "row-safe";
+        }
 
         const cells = [
             ip.ip_address,
@@ -92,15 +160,20 @@ function renderResults(data) {
         }
 
         const jurisdictionTd = document.createElement("td");
-        const badge = document.createElement("span");
-        const safeJurisdiction = ip.jurisdiction === "us" ? "us" : ip.jurisdiction === "eu" ? "eu" : "unknown";
-        badge.className = `badge badge-${safeJurisdiction}`;
-        badge.textContent = ip.jurisdiction.toUpperCase();
-        jurisdictionTd.appendChild(badge);
+        jurisdictionTd.textContent = ip.jurisdiction
+            ? String(ip.jurisdiction).toUpperCase()
+            : "-";
         row.appendChild(jurisdictionTd);
 
         const riskTd = document.createElement("td");
-        riskTd.textContent = ip.cloud_act_risk ? "Ja" : "Nee";
+        const badge = document.createElement("span");
+        const badgeClass = risk === "high" ? "badge-risk-high"
+            : risk === "medium" ? "badge-risk-medium"
+            : risk === "low" ? "badge-risk-low"
+            : "badge-unknown";
+        badge.className = `badge ${badgeClass}`;
+        badge.textContent = riskLabel(risk);
+        riskTd.appendChild(badge);
         row.appendChild(riskTd);
 
         tbody.appendChild(row);

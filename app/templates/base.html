@@ -8,14 +8,16 @@
 </head>
 <body>
     <header>
-        <h1><a href="/">SoevereinScan</a></h1>
-        <p>SaaS-soevereiniteitsscanner voor Nederlandse gemeenten</p>
+        <div class="header-inner">
+            <h1><a href="/">SoevereinScan</a></h1>
+            <p>Digitale soevereiniteitsscanner voor de Nederlandse publieke sector</p>
+        </div>
     </header>
     <main>
         {% block content %}{% endblock %}
     </main>
     <footer>
-        <p>Open source onder <a href="https://joinup.ec.europa.eu/licence/eupl-text-eupl-12">EUPL-1.2</a></p>
+        <p>Open source onder <a href="https://joinup.ec.europa.eu/licence/eupl-text-eupl-12">EUPL-1.2</a> | <a href="https://publicvibes.nl">PublicVibes.nl</a></p>
     </footer>
     {% block scripts %}{% endblock %}
 </body>

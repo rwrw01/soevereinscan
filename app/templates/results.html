@@ -18,13 +18,18 @@
         </div>
 
         <div class="summary-cards">
-            <div class="card card-danger" id="card-us">
-                <h4>VS-jurisdictie</h4>
+            <div class="card card-danger" id="card-risk">
+                <h4>Significant risico</h4>
                 <span class="big-number" id="us-count">0</span>
                 <span class="label">IP-adressen</span>
             </div>
+            <div class="card card-warning" id="card-attention">
+                <h4>Aandacht vereist</h4>
+                <span class="big-number" id="attention-count">0</span>
+                <span class="label">IP-adressen</span>
+            </div>
             <div class="card card-safe" id="card-eu">
-                <h4>EU-jurisdictie</h4>
+                <h4>Soeverein</h4>
                 <span class="big-number" id="eu-count">0</span>
                 <span class="label">IP-adressen</span>
             </div>
@@ -33,6 +38,40 @@
                 <span class="big-number" id="unknown-count">0</span>
                 <span class="label">IP-adressen</span>
             </div>
+        </div>
+
+        <div class="risk-explanation">
+            <h3>Wat betekent dit?</h3>
+            <div class="risk-levels">
+                <div class="risk-level">
+                    <span class="risk-dot risk-green"></span>
+                    <div>
+                        <strong>Soeverein (groen)</strong>
+                        <p>EU-bedrijf met servers in de EU. Geen buitenlandse jurisdictie van toepassing. Laagste risico.</p>
+                    </div>
+                </div>
+                <div class="risk-level">
+                    <span class="risk-dot risk-orange"></span>
+                    <div>
+                        <strong>Aandacht vereist (oranje)</strong>
+                        <p>VS-bedrijf (of ander niet-EU-moederbedrijf) maar servers staan in de EU.
+                           Het moederbedrijf kan onder buitenlandse wetgeving vallen waardoor
+                           gegevenstoegang afgedwongen kan worden.</p>
+                    </div>
+                </div>
+                <div class="risk-level">
+                    <span class="risk-dot risk-red"></span>
+                    <div>
+                        <strong>Significant risico (rood)</strong>
+                        <p>VS-bedrijf en/of servers buiten de EU. Volledige blootstelling aan
+                           buitenlandse jurisdictie. Extra maatregelen of alternatief aanbevolen.</p>
+                    </div>
+                </div>
+            </div>
+            <p class="risk-source">
+                Risico-indeling gebaseerd op het DICTU-toetsingsinstrument Digitale Soevereiniteit (januari 2026)
+                en de Rijksvisie Digitale Soevereiniteit (december 2025).
+            </p>
         </div>
 
         <h3>Details per IP-adres</h3>
@@ -45,7 +84,7 @@
                     <th>Land</th>
                     <th>Moederbedrijf</th>
                     <th>Jurisdictie</th>
-                    <th>CLOUD Act</th>
+                    <th>Soevereiniteitsrisico</th>
                 </tr>
             </thead>
             <tbody id="ip-tbody"></tbody>
