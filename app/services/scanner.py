@@ -127,6 +127,11 @@ class ScanOrchestrator:
             level_distribution = {str(k): level_counter.get(k, 0) for k in range(6)}
             average_level = round(level_sum / total, 1) if total > 0 else 0
 
+            final_url = (
+                capture_result.redirects[-1]
+                if capture_result.redirects
+                else scan.url
+            )
             scan.summary = {
                 "total_ips": total,
                 "average_level": average_level,
@@ -139,6 +144,12 @@ class ScanOrchestrator:
                 ),
                 "resource_tree": capture_result.resource_tree,
                 "hostname_ips": {h: list(ips) for h, ips in capture_result.hostname_ips.items()},
+                "original_url": scan.url,
+                "final_url": final_url,
+                "has_redirect": (
+                    len(capture_result.redirects) > 0
+                    and final_url != scan.url
+                ),
             }
             scan.status = "done"
             scan.completed_at = datetime.now(timezone.utc)

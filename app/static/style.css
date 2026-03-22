@@ -62,7 +62,18 @@ footer a { color: #666; }
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* --- Layer 1: Executive Summary --- */
+/* --- Redirect notice --- */
+.redirect-notice {
+    background: #fffbeb; border: 1px solid #f59e0b; border-left: 4px solid #d97706;
+    border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; margin: 1.5rem 0;
+    font-size: 0.9rem; color: #92400e;
+}
+.redirect-notice strong {
+    display: block; margin-bottom: 0.5rem; font-size: 0.95rem; color: #78350f;
+}
+.redirect-notice p { margin: 0.25rem 0; }
+
+/* --- Executive Summary --- */
 .executive-summary {
     background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
     padding: 2rem; margin: 2rem 0;
@@ -92,20 +103,100 @@ footer a { color: #666; }
 .exec-text h2 { font-size: 1.3rem; margin-bottom: 0.5rem; }
 .exec-summary-text { color: #444; font-size: 1rem; }
 
-.exec-recommendations { margin-top: 0; }
-.exec-recommendations h4 { margin-bottom: 0.75rem; font-size: 1rem; color: #16213e; }
-
-.recommendation {
-    display: flex; align-items: flex-start; gap: 0.75rem;
-    padding: 0.75rem 1rem; margin-bottom: 0.5rem;
-    background: #fffbeb; border-left: 4px solid #d97706;
-    border-radius: 0 8px 8px 0; font-size: 0.9rem; color: #92400e;
+/* --- Legal context block --- */
+.legal-context {
+    background: #f8f9fa; border-left: 4px solid #9ca3af;
+    border-radius: 0 8px 8px 0; padding: 1rem 1.25rem;
+    margin-top: 1.5rem;
 }
+.legal-context h4 {
+    font-size: 0.95rem; color: #374151; margin-bottom: 0.5rem;
+}
+.legal-context p {
+    color: #555; font-size: 0.9rem; margin-bottom: 0.5rem; line-height: 1.6;
+}
+.legal-context p:last-child { margin-bottom: 0; }
+
+/* --- Inform yourself block --- */
+.inform-yourself {
+    background: #f0f4f8; border-left: 4px solid #3b82f6;
+    border-radius: 0 8px 8px 0; padding: 1rem 1.25rem;
+    margin-top: 1rem;
+}
+.inform-yourself h4 {
+    font-size: 0.95rem; color: #1e40af; margin-bottom: 0.5rem;
+}
+.inform-yourself p {
+    color: #555; font-size: 0.9rem; margin-bottom: 0.5rem;
+}
+.inform-yourself ul {
+    list-style: disc; padding-left: 1.5rem; margin: 0.5rem 0 0;
+}
+.inform-yourself li {
+    color: #555; font-size: 0.9rem; margin-bottom: 0.3rem;
+}
+
+/* --- Recommendations section --- */
+.recommendations-section {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 1.5rem 2rem; margin: 1.5rem 0;
+}
+.recommendations-section:empty {
+    display: none;
+}
+.recommendations-section h3 {
+    font-size: 1.15rem; font-weight: 700; color: #16213e;
+    margin-bottom: 1rem;
+}
+
+.rec-table { width: 100%; border-collapse: collapse; margin: 0; }
+.rec-table th {
+    background: #f8f9fa; font-weight: 600; font-size: 0.82rem;
+    text-transform: uppercase; letter-spacing: 0.03em;
+    padding: 0.75rem; text-align: left; border-bottom: 2px solid #e5e7eb;
+}
+.rec-table td {
+    padding: 0.75rem; border-bottom: 1px solid #f0f0f0;
+    font-size: 0.9rem; vertical-align: top;
+}
+.rec-table tr:last-child td { border-bottom: none; }
+
 .rec-icon {
-    font-weight: 700; flex-shrink: 0; color: #d97706; font-size: 0.8rem;
+    font-weight: 700; color: #d97706; font-size: 0.8rem;
 }
 
-/* --- Report layers --- */
+/* --- Cost badges --- */
+.cost-badge {
+    display: inline-block; padding: 0.15rem 0.5rem; border-radius: 3px;
+    font-size: 0.75rem; font-weight: 600; white-space: nowrap;
+}
+.cost-weinig { background: #dcfce7; color: #166534; }
+.cost-midden { background: #fef3c7; color: #92400e; }
+.cost-veel { background: #fecaca; color: #991b1b; }
+
+/* --- Who badge --- */
+.who-badge {
+    display: inline-block; padding: 0.15rem 0.5rem; border-radius: 3px;
+    font-size: 0.75rem; font-weight: 500; white-space: nowrap;
+    background: #e5e7eb; color: #374151;
+}
+
+/* --- Report sections (details-based) --- */
+.report-section {
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+    padding: 1.5rem 2rem; margin: 1.5rem 0;
+}
+.report-section > summary {
+    cursor: pointer; user-select: none; list-style: none;
+}
+.report-section > summary::-webkit-details-marker { display: none; }
+.report-section > summary h3 { display: inline; }
+
+.section-desc {
+    color: #666; font-size: 0.9rem; margin: 0.5rem 0 1rem;
+}
+
+/* --- Report layers (legacy compat) --- */
 .report-layer {
     background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
     padding: 1.5rem 2rem; margin: 1.5rem 0;
@@ -124,11 +215,51 @@ footer a { color: #666; }
     border-bottom: 5px solid transparent;
     margin-right: 0.5rem; transition: transform 0.2s;
 }
-details[open] > .layer-heading::before {
+details[open] > .layer-heading::before,
+details[open] > summary > .layer-heading::before {
     transform: rotate(90deg);
 }
 .layer-heading::-webkit-details-marker { display: none; }
 .layer-description { color: #666; font-size: 0.9rem; margin: 0.5rem 0 1rem; }
+
+/* --- Questions section --- */
+.question-category {
+    font-size: 0.9rem; font-weight: 700; color: #16213e;
+    margin-top: 1rem; margin-bottom: 0.4rem;
+}
+.question-category:first-child { margin-top: 0; }
+
+.questions-list {
+    padding-left: 1.5rem; margin: 0 0 0.75rem;
+}
+.questions-list li {
+    font-size: 0.9rem; color: #374151; padding: 0.3rem 0;
+    line-height: 1.5;
+}
+
+/* --- Improvement path --- */
+.improvement-step {
+    background: #f8f9fa; border: 1px solid #e5e7eb; border-radius: 8px;
+    padding: 1rem 1.25rem; margin-bottom: 1rem;
+}
+.improvement-step h5 {
+    font-size: 0.95rem; font-weight: 700; color: #16213e;
+    margin-bottom: 0.4rem;
+}
+.improvement-step p {
+    font-size: 0.9rem; color: #555; margin-bottom: 0.5rem;
+}
+.step-meta {
+    display: flex; gap: 0.75rem; align-items: center;
+    margin-bottom: 0.5rem; flex-wrap: wrap;
+}
+.step-timeline {
+    font-size: 0.8rem; color: #666;
+}
+.step-estimate {
+    font-size: 0.82rem; font-weight: 600; color: #16213e;
+    margin-bottom: 0;
+}
 
 /* --- Level distribution --- */
 .level-distribution-section {
@@ -216,7 +347,7 @@ th {
 .badge-level-0 { background: #9ca3af; color: #fff; }
 
 /* --- Choices section --- */
-.choice-category { margin-bottom: 1rem; }
+.choice-category { margin-bottom: 1.25rem; }
 .choice-cat-header {
     font-size: 0.85rem; font-weight: 700; color: #16213e;
     text-transform: uppercase; letter-spacing: 0.04em;
@@ -314,9 +445,12 @@ th {
     .level-explanation { padding: 1rem; }
     .dist-label { min-width: 140px; font-size: 0.78rem; }
     .report-layer { padding: 1rem; }
+    .report-section { padding: 1rem; }
     .choice-item { flex-wrap: wrap; }
     .exec-header { flex-direction: column; text-align: center; gap: 1rem; }
     .score-circle { width: 100px; height: 100px; }
     .score-value { font-size: 1.8rem; }
     .country-bar-name { min-width: 100px; }
+    .step-meta { flex-direction: column; gap: 0.25rem; }
+    .recommendations-section { padding: 1rem; }
 }
