@@ -5,17 +5,52 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
+# Install Playwright chromium
+RUN PLAYWRIGHT_BROWSERS_PATH=/browsers \
+    pip install --no-cache-dir playwright && \
+    python -m playwright install --with-deps chromium
+
 # Runtime stage
 FROM python:3.12-slim-bookworm AS runtime
 WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+ENV PLAYWRIGHT_BROWSERS_PATH=/browsers
+
+# Chromium runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    wget \
+    libglib2.0-0 \
+    libnss3 \
+    libnspr4 \
+    libdbus-1-3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libatspi2.0-0 \
+    libx11-6 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxext6 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libcairo2 \
+    libasound2 \
+    fonts-noto-color-emoji \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN addgroup --system --gid 1001 appgroup && \
     adduser --system --uid 1001 --home /home/appuser appuser
 
 COPY --from=builder /install /usr/local
+COPY --from=builder /browsers /browsers
+RUN chown -R 1001:1001 /browsers
+
 COPY app/ ./app/
 COPY data/ ./data/
 COPY alembic/ ./alembic/

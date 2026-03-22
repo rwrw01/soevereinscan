@@ -1,6 +1,7 @@
 fastapi==0.115.12
 uvicorn[standard]==0.34.2
-pylookyloo==1.27.1
+playwrightcapture>=1.37.1
+har2tree>=1.37.0
 maxminddb==2.6.2
 httpx==0.28.1
 asyncpg==0.30.0

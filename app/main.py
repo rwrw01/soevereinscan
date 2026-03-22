@@ -6,8 +6,8 @@ from fastapi.staticfiles import StaticFiles
 
 from app.config import Settings
 from app.routes import health, pages, scan
+from app.services.capture import CaptureService
 from app.services.geoip import GeoIPService
-from app.services.lookyloo_client import LookylooClient
 from app.services.peeringdb import PeeringDBService
 from app.services.ripe_atlas import RipeAtlasService
 from app.services.scanner import ScanOrchestrator
@@ -33,16 +33,17 @@ async def lifespan(app: FastAPI):
         geoip = GeoIPService(asn_path=settings.geolite2_asn_path, country_path=settings.geolite2_country_path)
     except FileNotFoundError:
         logging.warning("GeoLite2 databases not found — GeoIP lookups disabled")
+
     peeringdb = PeeringDBService(redis_url=settings.redis_url, api_key=settings.peeringdb_api_key)
     ripe_atlas = RipeAtlasService(api_key=settings.ripe_atlas_api_key)
-    lookyloo = LookylooClient(lookyloo_url=settings.lookyloo_url)
+    capture = CaptureService()
 
     _orchestrator = ScanOrchestrator(
         settings=settings,
         geoip=geoip,
         peeringdb=peeringdb,
         ripe_atlas=ripe_atlas,
-        lookyloo=lookyloo,
+        capture=capture,
     )
 
     yield

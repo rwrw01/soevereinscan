@@ -12,7 +12,6 @@ class Settings(BaseSettings):
 
     database_url: str
     redis_url: str = "redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}"
-    lookyloo_url: str = "http://localhost:5100"
 
     maxmind_license_key: str = ""
     geolite2_asn_path: str = "./data/GeoLite2-ASN.mmdb"

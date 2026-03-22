@@ -12,13 +12,13 @@ def _make_orchestrator():
     geoip = MagicMock()
     peeringdb = MagicMock()
     ripe_atlas = MagicMock()
-    lookyloo = MagicMock()
+    capture = MagicMock()
     return ScanOrchestrator(
         settings=settings,
         geoip=geoip,
         peeringdb=peeringdb,
         ripe_atlas=ripe_atlas,
-        lookyloo=lookyloo,
+        capture=capture,
     )
 
 

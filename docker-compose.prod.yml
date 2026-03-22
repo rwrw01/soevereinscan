@@ -26,7 +26,6 @@ services:
     environment:
       DATABASE_URL: "postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
       REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}"
-      LOOKYLOO_URL: "http://lookyloo:5100"
       GEOLITE2_ASN_PATH: "/data/GeoLite2-ASN.mmdb"
       GEOLITE2_COUNTRY_PATH: "/data/GeoLite2-Country.mmdb"
       PORT: "8000"
@@ -39,12 +38,13 @@ services:
       - ALL
     read_only: true
     tmpfs:
-      - /tmp:noexec,nosuid,nodev,size=200M
+      - /tmp:nosuid,nodev,size=512M
+      - /home/appuser:size=16M
     deploy:
       resources:
         limits:
-          memory: 512M
-          pids: 100
+          memory: 1G
+          pids: 200
     restart: on-failure:5
     logging:
       driver: json-file
@@ -149,37 +149,6 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
-
-  lookyloo:
-    # NOTE: No ARM64 image available upstream. Enable with --profile lookyloo on amd64 or after building locally.
-    profiles:
-      - lookyloo
-    image: ghcr.io/lookyloo/lookyloo:latest
-    container_name: lookyloo-soevereinscan
-    networks:
-      - ss-internal
-      - net-fe-soevereinscan
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-          pids: 200
-    restart: on-failure:5
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
-    healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:5100')\" || exit 1"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
 
 volumes:
   pg-data:

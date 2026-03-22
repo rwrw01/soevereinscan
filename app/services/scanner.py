@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -7,9 +6,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings
 from app.models import DiscoveredResource, IpAnalysis, Scan
+from app.services.capture import CaptureService
 from app.services.classifier import classify_jurisdiction
 from app.services.geoip import GeoIPService
-from app.services.lookyloo_client import LookylooClient
 from app.services.peeringdb import PeeringDBService
 from app.services.ripe_atlas import RipeAtlasService
 
@@ -20,16 +19,16 @@ class ScanOrchestrator:
     def __init__(
         self,
         settings: Settings,
-        geoip: GeoIPService,
+        geoip: GeoIPService | None,
         peeringdb: PeeringDBService,
         ripe_atlas: RipeAtlasService,
-        lookyloo: LookylooClient,
+        capture: CaptureService,
     ):
         self._settings = settings
         self._geoip = geoip
         self._peeringdb = peeringdb
         self._ripe_atlas = ripe_atlas
-        self._lookyloo = lookyloo
+        self._capture = capture
 
     async def start_scan(self, session: AsyncSession, url: str) -> Scan:
         scan = Scan(url=url, status="pending")
@@ -44,44 +43,30 @@ class ScanOrchestrator:
             return
 
         try:
-            # Phase 1: Lookyloo capture
+            # Phase 1: Capture page
             scan.status = "scanning"
             await session.commit()
 
-            capture_uuid = self._lookyloo.submit(scan.url)
-            if not capture_uuid:
+            capture_result = await self._capture.capture(scan.url)
+
+            if capture_result.error:
+                logger.error("Capture failed for %s: %s", scan.url, capture_result.error)
                 scan.status = "error"
                 await session.commit()
                 return
 
-            scan.lookyloo_uuid = capture_uuid
-
-            # Wait for Lookyloo (max 120s)
-            for _ in range(24):
-                if self._lookyloo.is_ready(capture_uuid):
-                    break
-                await asyncio.sleep(5)
-            else:
-                scan.status = "error"
-                await session.commit()
-                return
-
-            # Phase 2: Extract resources
+            # Phase 2: Store discovered resources
             scan.status = "analyzing"
             await session.commit()
 
-            hostname_ips, all_ips = self._lookyloo.get_resources(capture_uuid)
-
-            for hostname, ips in hostname_ips.items():
+            for hostname, ips in capture_result.hostname_ips.items():
                 for ip in ips:
                     resource = DiscoveredResource(
                         scan_id=scan.id,
                         url=f"https://{hostname}",
                         hostname=hostname,
                         ip_address=ip,
-                        is_third_party=self._lookyloo.classify_third_party(
-                            scan.url, hostname
-                        ),
+                        is_third_party=CaptureService.classify_third_party(scan.url, hostname),
                     )
                     session.add(resource)
 
@@ -90,8 +75,19 @@ class ScanOrchestrator:
             eu_count = 0
             unknown_count = 0
 
-            for ip in all_ips:
-                geoip_result = self._geoip.lookup(ip)
+            for ip in capture_result.all_ips:
+                geoip_result = self._geoip.lookup(ip) if self._geoip else None
+                if not geoip_result:
+                    unknown_count += 1
+                    ip_analysis = IpAnalysis(
+                        scan_id=scan.id,
+                        ip_address=ip,
+                        jurisdiction="unknown",
+                        cloud_act_risk=False,
+                    )
+                    session.add(ip_analysis)
+                    continue
+
                 peeringdb_result = (
                     await self._peeringdb.lookup_asn(geoip_result.asn)
                     if geoip_result.asn
@@ -112,12 +108,8 @@ class ScanOrchestrator:
                     asn_org=geoip_result.asn_org,
                     country_code=geoip_result.country_code,
                     city=geoip_result.city,
-                    peeringdb_org_name=(
-                        peeringdb_result.org_name if peeringdb_result else None
-                    ),
-                    peeringdb_org_country=(
-                        peeringdb_result.org_country if peeringdb_result else None
-                    ),
+                    peeringdb_org_name=peeringdb_result.org_name if peeringdb_result else None,
+                    peeringdb_org_country=peeringdb_result.org_country if peeringdb_result else None,
                     parent_company=parent,
                     parent_company_country=parent_country,
                     jurisdiction=jurisdiction.jurisdiction,
@@ -139,15 +131,13 @@ class ScanOrchestrator:
                 "us_count": us_count,
                 "eu_count": eu_count,
                 "unknown_count": unknown_count,
-                "us_percentage": (
-                    round(us_count / total * 100, 1) if total > 0 else 0
-                ),
+                "us_percentage": round(us_count / total * 100, 1) if total > 0 else 0,
                 "cloud_act_risk": us_count > 0,
-                "total_hostnames": len(hostname_ips),
-                "third_party_hostnames": sum(
-                    1
-                    for h in hostname_ips
-                    if self._lookyloo.classify_third_party(scan.url, h)
+                "total_hostnames": len(capture_result.hostname_ips),
+                "third_party_hostnames": len(capture_result.third_party_domains),
+                "cookies_total": len(capture_result.cookies),
+                "third_party_cookies": sum(
+                    1 for c in capture_result.cookies if c.get("third_party", False)
                 ),
             }
             scan.status = "done"
