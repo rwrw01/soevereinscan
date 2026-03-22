@@ -1,4 +1,4 @@
-const BASE = window.__BASE_PATH__ || "";
+const BASE = document.documentElement.dataset.base || "";
 
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("scan-form");
@@ -181,3 +181,14 @@ function renderResults(data) {
         tbody.appendChild(row);
     }
 }
+
+// Auto-load results if scan-id is present on the script tag
+(function () {
+    const script = document.querySelector("script[data-scan-id]");
+    if (script) {
+        const scanId = script.dataset.scanId;
+        if (scanId) {
+            document.addEventListener("DOMContentLoaded", () => loadResults(scanId));
+        }
+    }
+})();

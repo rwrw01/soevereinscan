@@ -74,6 +74,13 @@ services:
       - "traefik.http.routers.soevereinscan.tls.certresolver=letsencrypt"
       - "traefik.http.services.soevereinscan.loadbalancer.server.port=8000"
       - "traefik.http.routers.soevereinscan.middlewares=crowdsec@file,security-headers@file,rate-limit@file"
+      # Block internal endpoints from public access (higher priority)
+      - "traefik.http.routers.soevereinscan-internal.rule=Host(`scan.publicvibes.nl`) && (PathPrefix(`/soeverein/healthz`) || PathPrefix(`/soeverein/readyz`))"
+      - "traefik.http.routers.soevereinscan-internal.entrypoints=websecure"
+      - "traefik.http.routers.soevereinscan-internal.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.soevereinscan-internal.middlewares=management-whitelist@file"
+      - "traefik.http.routers.soevereinscan-internal.service=soevereinscan"
+      - "traefik.http.routers.soevereinscan-internal.priority=200"
 
   postgres:
     image: postgres:16-alpine@sha256:b7587f3cb74f4f4b2a4f9d67f052edbf95eb93f4fec7c5ada3792546caaf7383

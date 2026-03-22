@@ -93,8 +93,5 @@
 </section>
 {% endblock %}
 {% block scripts %}
-<script src="{{ base }}/static/app.js"></script>
-<script>
-    document.addEventListener("DOMContentLoaded", () => loadResults("{{ scan_id }}"));
-</script>
+<script src="{{ base }}/static/app.js" data-scan-id="{{ scan_id }}"></script>
 {% endblock %}
