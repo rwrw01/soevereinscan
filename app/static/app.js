@@ -38,8 +38,17 @@ document.addEventListener("DOMContentLoaded", () => {
 async function loadResults(scanId) {
     const loading = document.getElementById("loading");
     const results = document.getElementById("results");
+    const statusMsg = loading.querySelector("p");
+    let pollCount = 0;
+
+    const statusText = {
+        pending: "Scan wordt voorbereid...",
+        scanning: "Website wordt geladen in de browser... Dit kan 30-60 seconden duren.",
+        analyzing: "IP-adressen worden geanalyseerd op jurisdictie...",
+    };
 
     const poll = async () => {
+        pollCount++;
         const res = await fetch(`${BASE}/api/scan/${scanId}`);
         const data = await res.json();
 
@@ -48,9 +57,12 @@ async function loadResults(scanId) {
             results.classList.remove("hidden");
             renderResults(data);
         } else if (data.status === "error") {
-            loading.querySelector("p").textContent = "Scan is mislukt. Probeer het opnieuw.";
+            statusMsg.textContent = "Scan is mislukt. Probeer het opnieuw.";
             loading.querySelector(".spinner").style.display = "none";
         } else {
+            const msg = statusText[data.status] || "Bezig...";
+            const elapsed = pollCount * 3;
+            statusMsg.textContent = `${msg} (${elapsed}s)`;
             setTimeout(poll, 3000);
         }
     };
