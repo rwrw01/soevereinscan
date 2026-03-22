@@ -1,0 +1,38 @@
+services:
+  portal:
+    build: .
+    container_name: scan-portal
+    networks:
+      - net-fe-scanportal
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /run
+    deploy:
+      resources:
+        limits:
+          memory: 32M
+          pids: 20
+    restart: on-failure:5
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:80/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=net-fe-scanportal"
+      - "traefik.http.routers.scanportal.rule=Host(`scan.publicvibes.nl`)"
+      - "traefik.http.routers.scanportal.entrypoints=websecure"
+      - "traefik.http.routers.scanportal.tls.certresolver=letsencrypt"
+      - "traefik.http.services.scanportal.loadbalancer.server.port=80"
+      - "traefik.http.routers.scanportal.middlewares=crowdsec@file,security-headers@file"
+
+networks:
+  net-fe-scanportal:
+    external: true

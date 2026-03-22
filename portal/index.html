@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PublicVibes — Gratis compliance-tools voor de publieke sector</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --hdr-from: #1a1a2e;
+            --hdr-to: #16213e;
+            --bg-body: #f8f9fa;
+            --bg-card: #ffffff;
+            --text-dark: #1a1a2e;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --blue: #3b82f6;
+            --green: #10b981;
+            --amber: #f59e0b;
+            --purple: #8b5cf6;
+            --shadow: 0 1px 3px rgba(0,0,0,0.08);
+            --shadow-hover: 0 12px 32px rgba(0,0,0,0.12);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-body);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .hero {
+            text-align: center;
+            padding: 4rem 2rem 3rem;
+            background: linear-gradient(135deg, var(--hdr-from) 0%, var(--hdr-to) 100%);
+            color: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -25%;
+            width: 150%;
+            height: 200%;
+            background: radial-gradient(ellipse at 30% 50%, rgba(59,130,246,0.1) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .hero h1 {
+            font-size: 2.8rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.75rem;
+            position: relative;
+        }
+
+        .hero .tagline {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.8);
+            max-width: 600px;
+            margin: 0 auto;
+            line-height: 1.7;
+            position: relative;
+        }
+
+        /* Scanner grid */
+        .scanners {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 3rem 2rem 4rem;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+            flex: 1;
+        }
+
+        .scanner-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            text-decoration: none;
+            color: inherit;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .scanner-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+        }
+
+        .scanner-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* Color variants */
+        .scanner-card.blue::before { background: var(--blue); }
+        .scanner-card.blue .card-icon { background: rgba(59,130,246,0.1); color: var(--blue); }
+
+        .scanner-card.green::before { background: var(--green); }
+        .scanner-card.green .card-icon { background: rgba(16,185,129,0.1); color: var(--green); }
+
+        .scanner-card.amber::before { background: var(--amber); }
+        .scanner-card.amber .card-icon { background: rgba(245,158,11,0.1); color: var(--amber); }
+
+        .scanner-card.purple::before { background: var(--purple); }
+        .scanner-card.purple .card-icon { background: rgba(139,92,246,0.1); color: var(--purple); }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+
+        .card-subtitle {
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-top: 0.1rem;
+        }
+
+        .card-description {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            flex: 1;
+            line-height: 1.7;
+        }
+
+        .card-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            align-self: flex-start;
+        }
+
+        .card-action .arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .scanner-card:hover .card-action .arrow {
+            transform: translateX(4px);
+        }
+
+        /* Footer */
+        .site-footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 1px solid var(--border);
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .site-footer a {
+            color: var(--text-dark);
+            text-decoration: none;
+        }
+
+        .site-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .footer-lines {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 700px) {
+            .hero { padding: 3rem 1.5rem 2rem; }
+            .hero h1 { font-size: 2rem; }
+            .hero .tagline { font-size: 1rem; }
+            .scanners {
+                grid-template-columns: 1fr;
+                padding: 1.5rem;
+                gap: 1.25rem;
+            }
+            .scanner-card { padding: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>PublicVibes</h1>
+        <p class="tagline">Gratis, onafhankelijke compliance-tools voor de Nederlandse publieke sector</p>
+    </div>
+
+    <div class="scanners">
+        <!-- SiteGuardian -->
+        <a href="https://siteguardian.publicvibes.nl" class="scanner-card blue">
+            <div class="card-header">
+                <div class="card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                        <polyline points="9 12 11 14 15 10"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="card-title">SiteGuardian</div>
+                    <div class="card-subtitle">Website Compliance Scanner</div>
+                </div>
+            </div>
+            <p class="card-description">
+                Scant websites op beveiliging, toegankelijkheid (WCAG 2.2 AA), privacy,
+                snelheid en overheidsstandaarden.
+            </p>
+            <span class="card-action">
+                Scanner openen <span class="arrow">&rarr;</span>
+            </span>
+        </a>
+
+        <!-- Git Guardian -->
+        <a href="https://gitguardian.publicvibes.nl" class="scanner-card green">
+            <div class="card-header">
+                <div class="card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="6" y1="3" x2="6" y2="15"/>
+                        <circle cx="18" cy="6" r="3"/>
+                        <circle cx="6" cy="18" r="3"/>
+                        <path d="M18 9a9 9 0 0 1-9 9"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="card-title">Git Guardian</div>
+                    <div class="card-subtitle">Repository Compliance Scanner</div>
+                </div>
+            </div>
+            <p class="card-description">
+                Scant GitHub-repositories op security, dependencies, documentatie
+                en open source best practices.
+            </p>
+            <span class="card-action">
+                Scanner openen <span class="arrow">&rarr;</span>
+            </span>
+        </a>
+
+        <!-- SoevereinScan -->
+        <a href="https://soevereinscan.publicvibes.nl" class="scanner-card amber">
+            <div class="card-header">
+                <div class="card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="2" y1="12" x2="22" y2="12"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="card-title">SoevereinScan</div>
+                    <div class="card-subtitle">Digitale Soevereiniteitsscanner</div>
+                </div>
+            </div>
+            <p class="card-description">
+                Analyseert welke buitenlandse diensten en jurisdicties betrokken zijn
+                bij uw SaaS-leveranciers.
+            </p>
+            <span class="card-action">
+                Scanner openen <span class="arrow">&rarr;</span>
+            </span>
+        </a>
+
+        <!-- Transcriptie -->
+        <a href="https://transcriptie.publicvibes.nl" class="scanner-card purple">
+            <div class="card-header">
+                <div class="card-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                        <line x1="12" y1="19" x2="12" y2="23"/>
+                        <line x1="8" y1="23" x2="16" y2="23"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="card-title">Transcriptie</div>
+                    <div class="card-subtitle">Vergadertranscriptie</div>
+                </div>
+            </div>
+            <p class="card-description">
+                Automatische transcriptie van vergaderingen en gesprekken.
+                Privacyvriendelijk en zelf gehost.
+            </p>
+            <span class="card-action">
+                Scanner openen <span class="arrow">&rarr;</span>
+            </span>
+        </a>
+    </div>
+
+    <footer class="site-footer">
+        <div class="footer-lines">
+            <span>Open source onder <a href="https://joinup.ec.europa.eu/licence/eupl-text-eupl-12">EUPL-1.2</a></span>
+            <span>Een initiatief van <a href="https://publicvibes.nl">publicvibes.nl</a></span>
+            <span>Contact: <a href="mailto:info@publicvibes.nl">info@publicvibes.nl</a></span>
+        </div>
+    </footer>
+</body>
+</html>
