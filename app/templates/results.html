@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Resultaten — SoevereinScan{% endblock %}
+{% block content %}
+<section id="results-container">
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Resultaten worden geladen...</p>
+    </div>
+    <div id="results" class="hidden">
+        <h2>Scanresultaten voor <span id="scan-url"></span></h2>
+
+        <div class="sovereignty-meter">
+            <h3>Soevereiniteitsmeter</h3>
+            <div class="meter-bar">
+                <div id="meter-fill" class="meter-fill"></div>
+            </div>
+            <p id="meter-label"></p>
+        </div>
+
+        <div class="summary-cards">
+            <div class="card card-danger" id="card-us">
+                <h4>VS-jurisdictie</h4>
+                <span class="big-number" id="us-count">0</span>
+                <span class="label">IP-adressen</span>
+            </div>
+            <div class="card card-safe" id="card-eu">
+                <h4>EU-jurisdictie</h4>
+                <span class="big-number" id="eu-count">0</span>
+                <span class="label">IP-adressen</span>
+            </div>
+            <div class="card card-unknown" id="card-unknown">
+                <h4>Onbekend</h4>
+                <span class="big-number" id="unknown-count">0</span>
+                <span class="label">IP-adressen</span>
+            </div>
+        </div>
+
+        <h3>Details per IP-adres</h3>
+        <table id="ip-table">
+            <thead>
+                <tr>
+                    <th>IP</th>
+                    <th>ASN</th>
+                    <th>Organisatie</th>
+                    <th>Land</th>
+                    <th>Moederbedrijf</th>
+                    <th>Jurisdictie</th>
+                    <th>CLOUD Act</th>
+                </tr>
+            </thead>
+            <tbody id="ip-tbody"></tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/app.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", () => loadResults("{{ scan_id }}"));
+</script>
+{% endblock %}

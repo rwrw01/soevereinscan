@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SoevereinScan{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <h1><a href="/">SoevereinScan</a></h1>
+        <p>SaaS-soevereiniteitsscanner voor Nederlandse gemeenten</p>
+    </header>
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        <p>Open source onder <a href="https://joinup.ec.europa.eu/licence/eupl-text-eupl-12">EUPL-1.2</a></p>
+    </footer>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

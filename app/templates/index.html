@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}SoevereinScan — Controleer uw SaaS-leveranciers{% endblock %}
+{% block content %}
+<section class="scan-form">
+    <h2>Controleer een SaaS-dienst op soevereiniteit</h2>
+    <p>Voer de URL van een cloud- of SaaS-dienst in om te analyseren welke partijen en jurisdicties betrokken zijn.</p>
+    <form id="scan-form">
+        <input type="url" id="scan-url" name="url" placeholder="https://app.leverancier.nl" required>
+        <button type="submit" id="scan-btn">Analyseer</button>
+    </form>
+    <div id="scan-status" class="hidden">
+        <div class="spinner"></div>
+        <p id="status-text">Scan wordt gestart...</p>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script src="/static/app.js"></script>
+{% endblock %}
