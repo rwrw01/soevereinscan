@@ -83,15 +83,16 @@ def classify_jurisdiction(
         )
         return JurisdictionResult(level=2, label=SOVEREIGNTY_LABELS[2], reasons=reasons)
 
-    # Level 1: non-EU parent AND server NOT in EU
-    if parent_is_non_eu and not server_in_eu and geoip.country_code is not None:
+    # Level 1: non-EU parent AND server NOT in EU (or server location unknown)
+    if parent_is_non_eu and not server_in_eu:
+        location = geoip.country_code or "onbekend (anycast/CDN)"
         reasons.append(
             f"Moederbedrijf {parent_company} is gevestigd buiten de EU ({parent_country}), "
-            f"server in {geoip.country_code}"
+            f"serverlocatie: {location}"
         )
         return JurisdictionResult(level=1, label=SOVEREIGNTY_LABELS[1], reasons=reasons)
 
-    # Level 0: fallback — non-EU everything or unclassifiable
+    # Level 0: fallback — no data at all
     reasons.append(
         f"Server in {geoip.country_code or 'onbekend'}, "
         f"geen waarborgen voor digitale soevereiniteit vastgesteld"
