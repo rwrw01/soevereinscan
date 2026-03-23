@@ -5,7 +5,9 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: "postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
-      REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_DB: "0"
       LOOKYLOO_URL: "http://lookyloo:5100"
       GEOLITE2_ASN_PATH: "/data/GeoLite2-ASN.mmdb"
       GEOLITE2_COUNTRY_PATH: "/data/GeoLite2-Country.mmdb"
@@ -25,7 +27,7 @@ services:
     environment:
       POSTGRES_DB: soevereinscan
       POSTGRES_USER: soevereinscan
-      POSTGRES_PASSWORD: change-me
+      POSTGRES_PASSWORD: "${DB_PASSWORD:-change-me}"
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:

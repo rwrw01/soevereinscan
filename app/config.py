@@ -11,7 +11,10 @@ class Settings(BaseSettings):
     base_url: str = "http://localhost:8000"
 
     database_url: str
-    redis_url: str = "redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}"
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_db: int = 0
+    redis_url: str = ""
 
     maxmind_license_key: str = ""
     geolite2_asn_path: str = "./data/GeoLite2-ASN.mmdb"
@@ -31,4 +34,12 @@ class Settings(BaseSettings):
             secret_file = SECRETS_DIR / field
             if secret_file.exists() and not values.get(field):
                 values[field] = secret_file.read_text().strip()
+
+        # Construct redis_url from components if not explicitly provided
+        if not values.get("redis_url"):
+            host = values.get("redis_host", "localhost")
+            port = values.get("redis_port", 6379)
+            db = values.get("redis_db", 0)
+            values["redis_url"] = f"redis://{host}:{port}/{db}"
+
         return values

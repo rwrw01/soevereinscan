@@ -25,7 +25,9 @@ services:
       - net-fe-scanportal
     environment:
       DATABASE_URL: "postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}"
-      REDIS_URL: "redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_DB: "0"
       GEOLITE2_ASN_PATH: "/data/GeoLite2-ASN.mmdb"
       GEOLITE2_COUNTRY_PATH: "/data/GeoLite2-City.mmdb"
       PORT: "8000"
