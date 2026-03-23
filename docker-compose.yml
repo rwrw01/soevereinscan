@@ -27,7 +27,7 @@ services:
     environment:
       POSTGRES_DB: soevereinscan
       POSTGRES_USER: soevereinscan
-      POSTGRES_PASSWORD: "${DB_PASSWORD:-change-me}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
     volumes:
       - pg-data:/var/lib/postgresql/data
     healthcheck:
