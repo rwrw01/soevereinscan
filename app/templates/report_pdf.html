@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<title>SoevereinScan Rapport — {{ url }}</title>
+<style>
+@page {
+    size: A4;
+    margin: 20mm 15mm 25mm 15mm;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.5;
+    color: #1a1a2e;
+    background: white;
+}
+
+h1 { font-size: 20pt; margin-bottom: 8pt; color: #1a1a2e; }
+h2 { font-size: 14pt; margin-top: 16pt; margin-bottom: 8pt; color: #1a1a2e; page-break-after: avoid; }
+h3 { font-size: 12pt; margin-top: 12pt; margin-bottom: 6pt; color: #1a1a2e; page-break-after: avoid; }
+h4 { font-size: 10pt; margin-top: 10pt; margin-bottom: 4pt; color: #1a1a2e; page-break-after: avoid; }
+
+p { margin-bottom: 6pt; }
+
+table { width: 100%; border-collapse: collapse; margin: 8pt 0; page-break-inside: auto; }
+thead { display: table-header-group; }
+tr { page-break-inside: avoid; }
+th { background: #f8f9fa; text-align: left; padding: 6pt 8pt; font-size: 9pt; border-bottom: 2px solid #e5e7eb; }
+td { padding: 6pt 8pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; vertical-align: top; }
+
+.page-break { page-break-before: always; }
+
+/* Cover */
+.cover { text-align: center; padding-top: 60pt; }
+.cover h1 { font-size: 28pt; margin-bottom: 4pt; }
+.cover .subtitle { font-size: 14pt; color: #64748b; margin-bottom: 24pt; }
+.cover .scan-url { font-size: 16pt; color: #1a1a2e; font-weight: 600; margin-bottom: 8pt; }
+.cover .scan-date { font-size: 10pt; color: #64748b; margin-bottom: 40pt; }
+
+.score-circle {
+    width: 100pt;
+    height: 100pt;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: white;
+    font-weight: 800;
+    margin: 16pt auto;
+}
+.score-value { font-size: 28pt; line-height: 1; }
+.score-max { font-size: 10pt; opacity: 0.9; }
+
+.energy-label {
+    display: inline-block;
+    font-size: 24pt;
+    font-weight: 800;
+    padding: 4pt 16pt;
+    border-radius: 6pt;
+    color: white;
+    margin: 8pt 0 24pt 0;
+}
+
+.score-red { background: #dc2626; }
+.score-amber { background: #d97706; }
+.score-green { background: #15803d; }
+
+.label-A { background: #15803d; }
+.label-B { background: #22c55e; }
+.label-C { background: #eab308; }
+.label-D { background: #f97316; }
+.label-E { background: #dc2626; }
+.label-F { background: #991b1b; }
+
+.summary-text { font-size: 11pt; max-width: 400pt; margin: 0 auto 16pt auto; text-align: center; }
+
+/* Badges */
+.badge { padding: 2pt 6pt; border-radius: 3pt; font-size: 8pt; font-weight: 600; color: white; display: inline-block; }
+.badge-0 { background: #991b1b; }
+.badge-1 { background: #dc2626; }
+.badge-2 { background: #f97316; }
+.badge-3 { background: #eab308; color: #1a1a2e; }
+.badge-4 { background: #22c55e; }
+.badge-5 { background: #15803d; }
+
+/* Recommendations */
+.recommendation { padding: 8pt; margin: 4pt 0; border-left: 3px solid #f97316; background: #fff7ed; page-break-inside: avoid; }
+.recommendation p { margin: 0; }
+.rec-meta { font-size: 8pt; color: #64748b; margin-top: 2pt; }
+.rec-cost { display: inline-block; padding: 1pt 4pt; border-radius: 2pt; font-size: 8pt; font-weight: 600; }
+.cost-Weinig { background: #dcfce7; color: #15803d; }
+.cost-Midden { background: #fef3c7; color: #92400e; }
+.cost-Veel { background: #fde8e8; color: #dc2626; }
+
+/* Redirect notice */
+.redirect-notice { padding: 8pt 12pt; background: #fef3c7; border-left: 3px solid #eab308; margin: 12pt 0; font-size: 9pt; }
+
+/* Services */
+.service-row { padding: 6pt 0; border-bottom: 1px solid #f0f0f0; page-break-inside: avoid; }
+.service-ok { border-left: 3px solid #22c55e; padding-left: 8pt; }
+.service-warn { border-left: 3px solid #f97316; padding-left: 8pt; }
+.service-bad { border-left: 3px solid #dc2626; padding-left: 8pt; }
+.service-name { font-weight: 600; font-size: 10pt; }
+.service-detail { font-size: 8pt; color: #64748b; }
+.service-alt { font-size: 8pt; color: #15803d; margin-top: 2pt; }
+.service-action { font-size: 8pt; color: #d97706; }
+
+/* Improvement steps */
+.step { padding: 8pt; margin: 4pt 0; background: #f8f9fa; border-radius: 4pt; page-break-inside: avoid; }
+.step-title { font-weight: 600; font-size: 10pt; }
+.step-detail { font-size: 9pt; color: #64748b; }
+
+/* Questions */
+.question { padding: 6pt 0 6pt 16pt; border-bottom: 1px solid #f0f0f0; position: relative; page-break-inside: avoid; }
+.question::before { content: "?"; position: absolute; left: 0; font-weight: 700; color: #6366f1; }
+
+/* Distribution */
+.dist-bar-container { margin: 4pt 0; }
+.dist-label { font-size: 9pt; display: inline-block; width: 180pt; }
+.dist-bar { display: inline-block; height: 12pt; border-radius: 2pt; vertical-align: middle; }
+.dist-count { font-size: 8pt; color: #64748b; margin-left: 4pt; }
+
+/* Tree */
+.tree-node { padding: 2pt 0; font-size: 9pt; }
+.tree-indent { margin-left: 20pt; }
+.tree-line { border-left: 1px solid #ccc; padding-left: 8pt; margin-left: 4pt; }
+
+/* Country bars */
+.country-bar-row { margin: 3pt 0; page-break-inside: avoid; }
+.country-name { display: inline-block; width: 120pt; font-size: 9pt; }
+.country-bar { display: inline-block; height: 14pt; background: #6366f1; border-radius: 2pt; vertical-align: middle; min-width: 4pt; }
+.country-count { font-size: 8pt; color: #64748b; margin-left: 4pt; }
+
+/* Legal */
+.legal-section { font-size: 9pt; line-height: 1.6; }
+.legal-section p { margin-bottom: 8pt; }
+
+/* Footer */
+.footer-text { font-size: 8pt; color: #999; margin-top: 16pt; border-top: 1px solid #e5e7eb; padding-top: 8pt; }
+
+.section-card { margin-bottom: 16pt; }
+
+/* Level explanation */
+.level-item { display: flex; align-items: flex-start; margin: 4pt 0; page-break-inside: avoid; }
+.level-dot { display: inline-block; width: 10pt; height: 10pt; border-radius: 50%; margin-right: 8pt; margin-top: 3pt; flex-shrink: 0; }
+.level-dot-5 { background: #15803d; }
+.level-dot-4 { background: #22c55e; }
+.level-dot-3 { background: #eab308; }
+.level-dot-2 { background: #f97316; }
+.level-dot-1 { background: #dc2626; }
+.level-dot-0 { background: #991b1b; }
+.level-text { font-size: 9pt; }
+.level-text strong { font-size: 9pt; }
+.level-text p { font-size: 8pt; color: #64748b; margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- ==================== PAGE 1: COVER ==================== -->
+<div class="cover">
+    <h1>SoevereinScan</h1>
+    <div class="subtitle">Rapport digitale soevereiniteit</div>
+
+    <div class="scan-url">{{ url }}</div>
+    <div class="scan-date">Gescand op {{ scan_date }}</div>
+
+    {% if score >= 4 %}
+    <div class="score-circle score-green">
+    {% elif score >= 2.5 %}
+    <div class="score-circle score-amber">
+    {% else %}
+    <div class="score-circle score-red">
+    {% endif %}
+        <span class="score-value">{{ "%.1f"|format(score) }}</span>
+        <span class="score-max">/ 5</span>
+    </div>
+
+    <div>
+        <span class="energy-label label-{{ energy_label }}">{{ energy_label }}</span>
+    </div>
+
+    <p class="summary-text">
+        {% if score >= 4 %}
+            Uw website scoort goed op digitale soevereiniteit. De meeste diensten worden binnen de EU verwerkt door Europese partijen.
+        {% elif score >= 2.5 %}
+            Uw website gebruikt een mix van Europese en niet-Europese diensten. Er zijn verbeterpunten mogelijk.
+        {% else %}
+            Uw website is sterk afhankelijk van niet-Europese diensten. Er zijn belangrijke verbeterpunten.
+        {% endif %}
+    </p>
+
+    <p class="summary-text" style="font-size: 9pt; color: #64748b;">
+        {{ total_services }} dienst{{ "en" if total_services != 1 else "" }} gedetecteerd —
+        {{ eu_count }} Europees soeverein, {{ non_eu_count }} niet-Europees
+    </p>
+
+    {% if has_redirect %}
+    <div class="redirect-notice" style="text-align: left; max-width: 400pt; margin: 16pt auto;">
+        Let op: <strong>{{ original_url }}</strong> heeft een redirect naar <strong>{{ final_url }}</strong>.
+        De scan is uitgevoerd op de uiteindelijke bestemming.
+    </div>
+    {% endif %}
+
+    {% if recommendations %}
+    <div style="text-align: left; max-width: 440pt; margin: 24pt auto 0 auto;">
+        <h3>Belangrijkste aanbevelingen</h3>
+        {% for rec in recommendations %}
+        <div class="recommendation">
+            <p>{{ rec.text }}</p>
+            <div class="rec-meta">
+                <span class="rec-cost cost-{{ rec.cost }}">{{ rec.cost }} moeite</span>
+                &nbsp; Wie: {{ rec.who }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<!-- ==================== PAGE 2: SERVICES ==================== -->
+<div class="page-break"></div>
+<h2>Uw digitale leveranciers</h2>
+<p>Overzicht van de diensten die geladen worden als iemand uw website bezoekt.</p>
+
+{% if services %}
+<table>
+    <thead>
+        <tr>
+            <th>Dienst / Aanbieder</th>
+            <th>Land</th>
+            <th>Niveau</th>
+            <th>Hostnames</th>
+            <th>Actie / Alternatief</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for svc in services %}
+        <tr>
+            <td><strong>{{ svc.name }}</strong></td>
+            <td>{{ svc.country_name }}</td>
+            <td><span class="badge badge-{{ svc.level }}">{{ svc.level }} — {{ svc.label }}</span></td>
+            <td style="font-size: 8pt; word-break: break-all;">{{ svc.hostnames|join(", ") }}</td>
+            <td>
+                {% if svc.action %}<span class="service-action">{{ svc.action }}</span><br>{% endif %}
+                {% if svc.alternative %}<span class="service-alt">{{ svc.alternative }}</span>{% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p><em>Geen diensten gedetecteerd.</em></p>
+{% endif %}
+
+<!-- ==================== PAGE 3: IMPROVEMENT PATH ==================== -->
+{% if improvement_steps %}
+<div class="page-break"></div>
+<h2>Verbeterpad</h2>
+<p>Stappen die u kunt nemen om de digitale soevereiniteit van uw website te verbeteren.</p>
+
+{% for step in improvement_steps %}
+<div class="step">
+    <div class="step-title">Stap {{ loop.index }}: {{ step.title }}</div>
+    <p style="margin: 4pt 0;">{{ step.description }}</p>
+    <div class="step-detail">
+        Doorlooptijd: {{ step.effort }} &nbsp;|&nbsp; Wie: {{ step.who }}
+        {% if step.estimated_score %} &nbsp;|&nbsp; Verwachte score: {{ step.estimated_score }} ({{ step.estimated_label }}){% endif %}
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- ==================== PAGE 4: QUESTIONS ==================== -->
+{% if questions %}
+<div class="page-break"></div>
+<h2>Vragen voor uw informatieadviseur</h2>
+<p>Op basis van de scan zijn de volgende vragen relevant om binnen uw organisatie te bespreken.</p>
+
+{% for q in questions %}
+<div class="question">{{ q }}</div>
+{% endfor %}
+{% endif %}
+
+<!-- ==================== PAGE 5: VISUAL OVERVIEW ==================== -->
+<div class="page-break"></div>
+<h2>Visueel overzicht</h2>
+
+{% if distribution %}
+<h3>Verdeling soevereiniteitsniveaus</h3>
+{% set level_labels = {5: "Niveau 5 — Volledig soeverein", 4: "Niveau 4 — Grotendeels soeverein", 3: "Niveau 3 — Gedeeltelijk soeverein", 2: "Niveau 2 — Beperkt soeverein", 1: "Niveau 1 — Minimaal soeverein", 0: "Niveau 0 — Niet soeverein"} %}
+{% set level_colors = {5: "#15803d", 4: "#22c55e", 3: "#eab308", 2: "#f97316", 1: "#dc2626", 0: "#991b1b"} %}
+{% set total_ips = distribution.values()|sum %}
+{% for lvl in [5, 4, 3, 2, 1, 0] %}
+{% if distribution.get(lvl|string, 0) > 0 or distribution.get(lvl, 0) > 0 %}
+{% set count = distribution.get(lvl|string, distribution.get(lvl, 0)) %}
+<div class="dist-bar-container">
+    <span class="dist-label">{{ level_labels[lvl] }}</span>
+    <span class="dist-bar" style="width: {{ (count / total_ips * 200)|int }}pt; background: {{ level_colors[lvl] }};"></span>
+    <span class="dist-count">{{ count }} IP{{ "s" if count != 1 else "" }}</span>
+</div>
+{% endif %}
+{% endfor %}
+{% endif %}
+
+{% if country_bars %}
+<h3 style="margin-top: 16pt;">Servers per land</h3>
+{% set max_country = country_bars[0][1] if country_bars else 1 %}
+{% for name, count in country_bars %}
+<div class="country-bar-row">
+    <span class="country-name">{{ name }}</span>
+    <span class="country-bar" style="width: {{ (count / max_country * 150)|int }}pt;"></span>
+    <span class="country-count">{{ count }}</span>
+</div>
+{% endfor %}
+{% endif %}
+
+{% if tree %}
+<h3 style="margin-top: 16pt;">Afhankelijkheidsboom</h3>
+<p style="font-size: 9pt; color: #64748b;">Overzicht van alle diensten die worden geladen bij het bezoeken van deze website.</p>
+{% macro render_tree(node, depth) %}
+<div class="tree-node" style="margin-left: {{ depth * 16 }}pt;">
+    {% if depth > 0 %}<span style="color: #ccc;">&#9492;</span> {% endif %}
+    <strong>{{ node.hostname or node.url or "onbekend" }}</strong>
+    {% if node.resource_type %}<span style="color: #64748b; font-size: 8pt;"> ({{ node.resource_type }})</span>{% endif %}
+</div>
+{% if node.children %}
+{% for child in node.children %}
+{{ render_tree(child, depth + 1) }}
+{% endfor %}
+{% endif %}
+{% endmacro %}
+{{ render_tree(tree, 0) }}
+{% endif %}
+
+<!-- ==================== PAGE 6: TECHNICAL DETAILS ==================== -->
+<div class="page-break"></div>
+<h2>Technische details</h2>
+
+<h3>Wat betekent elk niveau?</h3>
+<div style="margin-bottom: 12pt;">
+    <div class="level-item">
+        <span class="level-dot level-dot-5"></span>
+        <div class="level-text">
+            <strong>Niveau 5 — Volledig soeverein</strong>
+            <p>EU-bedrijf met servers in de EU en netwerkeigenaar in de EU. Geen buitenlandse jurisdictie van toepassing.</p>
+        </div>
+    </div>
+    <div class="level-item">
+        <span class="level-dot level-dot-4"></span>
+        <div class="level-text">
+            <strong>Niveau 4 — Grotendeels soeverein</strong>
+            <p>EU-bedrijf met servers in de EU/EER/CH. Minimale externe afhankelijkheden.</p>
+        </div>
+    </div>
+    <div class="level-item">
+        <span class="level-dot level-dot-3"></span>
+        <div class="level-text">
+            <strong>Niveau 3 — Gedeeltelijk soeverein</strong>
+            <p>Servers in de EU, maar het moederbedrijf of de netwerkeigenaar is onbekend of buiten de EU.</p>
+        </div>
+    </div>
+    <div class="level-item">
+        <span class="level-dot level-dot-2"></span>
+        <div class="level-text">
+            <strong>Niveau 2 — Beperkt soeverein</strong>
+            <p>Niet-EU moederbedrijf, maar data wordt verwerkt in de EU.</p>
+        </div>
+    </div>
+    <div class="level-item">
+        <span class="level-dot level-dot-1"></span>
+        <div class="level-text">
+            <strong>Niveau 1 — Minimaal soeverein</strong>
+            <p>Niet-EU moederbedrijf met servers buiten de EU.</p>
+        </div>
+    </div>
+    <div class="level-item">
+        <span class="level-dot level-dot-0"></span>
+        <div class="level-text">
+            <strong>Niveau 0 — Niet soeverein</strong>
+            <p>Volledig onder buitenlandse jurisdictie, geen waarborgen vastgesteld.</p>
+        </div>
+    </div>
+</div>
+<p style="font-size: 8pt; color: #64748b;">
+    Indeling gebaseerd op het DICTU-toetsingsinstrument Digitale Soevereiniteit (januari 2026)
+    en de Rijksvisie Digitale Soevereiniteit (december 2025).
+</p>
+
+{% if ip_table %}
+<h3 style="margin-top: 16pt;">IP-adressen en ASN-nummers</h3>
+<table>
+    <thead>
+        <tr>
+            <th>IP-adres</th>
+            <th>ASN</th>
+            <th>Organisatie</th>
+            <th>Land</th>
+            <th>Moederbedrijf</th>
+            <th>Niveau</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ip in ip_table %}
+        <tr>
+            <td style="font-family: monospace; font-size: 8pt;">{{ ip.ip }}</td>
+            <td>{{ ip.asn or "-" }}</td>
+            <td>{{ ip.org }}</td>
+            <td>{{ ip.country }}</td>
+            <td>{{ ip.parent }}</td>
+            <td><span class="badge badge-{{ ip.level }}">{{ ip.level }} — {{ ip.label }}</span></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+
+<!-- ==================== LAST PAGE: LEGAL ==================== -->
+<div class="page-break"></div>
+<h2>Juridische achtergrond</h2>
+<div class="legal-section">
+    <p>
+        De digitale soevereiniteit van een website wordt bepaald door welke partijen toegang (kunnen) hebben
+        tot de data die wordt verwerkt. Dit rapport analyseert de technische infrastructuur van uw website
+        en beoordeelt per dienst in hoeverre data onder Europese jurisdictie blijft.
+    </p>
+
+    <h3>CLOUD Act en FISA</h3>
+    <p>
+        De Amerikaanse CLOUD Act (2018) geeft de Amerikaanse overheid de mogelijkheid om data op te vragen
+        bij Amerikaanse bedrijven, ongeacht waar die data fysiek is opgeslagen. Dit geldt ook voor data
+        in Europese datacenters als het moederbedrijf Amerikaans is.
+    </p>
+    <p>
+        Section 702 van de Foreign Intelligence Surveillance Act (FISA) maakt surveillance mogelijk
+        van niet-Amerikaanse personen buiten de VS. Het Europese Hof van Justitie oordeelde in het
+        Schrems II-arrest (2020) dat dit onvoldoende bescherming biedt voor Europese burgers.
+    </p>
+
+    <h3>Europees beleid</h3>
+    <p>
+        De Rijksvisie Digitale Soevereiniteit (december 2025) en het DICTU-toetsingsinstrument
+        (januari 2026) bieden een kader voor de beoordeling van digitale soevereiniteit.
+        Dit rapport volgt deze methodiek bij het bepalen van soevereiniteitsniveaus.
+    </p>
+    <p>
+        Het Data Act, de AI Act en de Cyber Resilience Act versterken het Europese kader
+        voor digitale autonomie. Organisaties worden aangemoedigd om waar mogelijk Europese
+        alternatieven te overwegen.
+    </p>
+
+    <h3>Nuance</h3>
+    <p>
+        Een niet-Europese dienst is niet per definitie onveilig. Veel Amerikaanse bedrijven bieden
+        Standard Contractual Clauses (SCC's) en andere waarborgen aan. Dit rapport toont de
+        <em>technische afhankelijkheden</em> en helpt bij het maken van een bewuste afweging.
+    </p>
+</div>
+
+<div class="footer-text" style="margin-top: 40pt;">
+    <p>
+        Dit rapport is gegenereerd door <strong>SoevereinScan</strong> op {{ scan_date }}.
+    </p>
+    <p>
+        SoevereinScan analyseert de technische infrastructuur van websites en is bedoeld als hulpmiddel
+        bij het in kaart brengen van digitale afhankelijkheden. Het rapport is geen juridisch advies.
+    </p>
+    <p>
+        <strong>scan.publicvibes.nl/soeverein</strong> — Een initiatief van PublicVibes.nl
+    </p>
+</div>
+
+</body>
+</html>

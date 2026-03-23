@@ -103,9 +103,11 @@ async def send_report_email(
 async def _send_report_email(
     scan_id: uuid.UUID, email: str, url: str
 ) -> None:
+    from app.database import async_session
     from app.services.email import send_report
     from app.services.pdf import generate_report_pdf
 
-    pdf = await generate_report_pdf(str(scan_id))
+    async with async_session() as session:
+        pdf = await generate_report_pdf(str(scan_id), session)
     if pdf:
         await send_report(email, pdf, url)
