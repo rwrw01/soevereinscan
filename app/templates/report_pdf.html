@@ -325,8 +325,8 @@ td { padding: 6pt 8pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; vertica
 {% macro render_tree(node, depth) %}
 <div class="tree-node" style="margin-left: {{ depth * 16 }}pt;">
     {% if depth > 0 %}<span style="color: #ccc;">&#9492;</span> {% endif %}
-    <strong>{{ node.hostname or node.url or "onbekend" }}</strong>
-    {% if node.resource_type %}<span style="color: #64748b; font-size: 8pt;"> ({{ node.resource_type }})</span>{% endif %}
+    <strong>{{ node.domain or node.hostname or "onbekend" }}</strong>
+    {% if node.count %}<span style="color: #64748b; font-size: 8pt;"> ({{ node.count }} verzoeken)</span>{% endif %}
 </div>
 {% if node.children %}
 {% for child in node.children %}
