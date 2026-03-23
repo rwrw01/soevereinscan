@@ -1,0 +1,14 @@
+{
+    "_comment": "Override list for ASN organizations where automated detection (PeeringDB + RIPEstat) gives wrong results. Only exceptions go here.",
+    "overrides_by_org": {
+        "Akamai International B.V.": {"parent": "Akamai", "country": "US", "reason": "RIPE-registered as NL but US parent"},
+        "Akamai Technologies, Inc.": {"parent": "Akamai", "country": "US"},
+        "Akamai": {"parent": "Akamai", "country": "US"},
+        "GitHub, Inc.": {"parent": "Microsoft", "country": "US", "reason": "Acquired by Microsoft 2018"},
+        "LinkedIn Corporation": {"parent": "Microsoft", "country": "US", "reason": "Acquired by Microsoft 2016"},
+        "Instagram": {"parent": "Meta", "country": "US", "reason": "Part of Meta"},
+        "WhatsApp": {"parent": "Meta", "country": "US", "reason": "Part of Meta"},
+        "Ziggo B.V.": {"parent": "Liberty Global", "country": "US", "reason": "Acquired by Liberty Global"},
+        "i3D.net B.V.": {"parent": "Ubisoft", "country": "FR", "reason": "Acquired by Ubisoft"}
+    }
+}

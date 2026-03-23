@@ -12,6 +12,7 @@ from app.services.classifier import classify_jurisdiction
 from app.services.geoip import GeoIPService
 from app.services.peeringdb import PeeringDBService
 from app.services.ripe_atlas import RipeAtlasService
+from app.services.ripestat import RipeStatService
 
 logger = logging.getLogger(__name__)
 
@@ -24,12 +25,14 @@ class ScanOrchestrator:
         peeringdb: PeeringDBService,
         ripe_atlas: RipeAtlasService,
         capture: CaptureService,
+        ripestat: RipeStatService,
     ):
         self._settings = settings
         self._geoip = geoip
         self._peeringdb = peeringdb
         self._ripe_atlas = ripe_atlas
         self._capture = capture
+        self._ripestat = ripestat
 
     async def start_scan(self, session: AsyncSession, url: str) -> Scan:
         scan = Scan(url=url, status="pending")
@@ -93,14 +96,25 @@ class ScanOrchestrator:
                     if geoip_result.asn
                     else None
                 )
-                parent, parent_country = self._peeringdb.get_parent_company(
-                    geoip_result.asn_org or ""
+
+                # WATERFALL: determine parent company and country
+                # Step 1: Override (highest priority — for known exceptions)
+                parent, parent_country = self._peeringdb.get_override(
+                    geoip_result.asn_org or "", geoip_result.asn
                 )
 
-                # PeeringDB fallback: if manual mapping has no result, use PeeringDB org data
-                if parent is None and peeringdb_result and peeringdb_result.org_name:
-                    parent = peeringdb_result.org_name
-                    parent_country = peeringdb_result.org_country
+                # Step 2: PeeringDB org country
+                if parent_country is None and peeringdb_result:
+                    if peeringdb_result.org_country:
+                        parent = peeringdb_result.org_name
+                        parent_country = peeringdb_result.org_country
+
+                # Step 3: RIPEstat as fallback
+                if parent_country is None and geoip_result.asn:
+                    ripestat_country = await self._ripestat.get_country(geoip_result.asn)
+                    if ripestat_country:
+                        parent = peeringdb_result.org_name if peeringdb_result else geoip_result.asn_org
+                        parent_country = ripestat_country
 
                 jurisdiction = classify_jurisdiction(
                     geoip_result, peeringdb_result, parent, parent_country

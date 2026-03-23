@@ -13,12 +13,14 @@ def _make_orchestrator():
     peeringdb = MagicMock()
     ripe_atlas = MagicMock()
     capture = MagicMock()
+    ripestat = MagicMock()
     return ScanOrchestrator(
         settings=settings,
         geoip=geoip,
         peeringdb=peeringdb,
         ripe_atlas=ripe_atlas,
         capture=capture,
+        ripestat=ripestat,
     )
 
 

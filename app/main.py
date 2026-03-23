@@ -10,6 +10,7 @@ from app.services.capture import CaptureService
 from app.services.geoip import GeoIPService
 from app.services.peeringdb import PeeringDBService
 from app.services.ripe_atlas import RipeAtlasService
+from app.services.ripestat import RipeStatService
 from app.services.scanner import ScanOrchestrator
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
@@ -37,6 +38,7 @@ async def lifespan(app: FastAPI):
     peeringdb = PeeringDBService(redis_url=settings.redis_url, api_key=settings.peeringdb_api_key)
     ripe_atlas = RipeAtlasService(api_key=settings.ripe_atlas_api_key)
     capture = CaptureService()
+    ripestat = RipeStatService(redis_url=settings.redis_url)
 
     _orchestrator = ScanOrchestrator(
         settings=settings,
@@ -44,6 +46,7 @@ async def lifespan(app: FastAPI):
         peeringdb=peeringdb,
         ripe_atlas=ripe_atlas,
         capture=capture,
+        ripestat=ripestat,
     )
 
     yield
@@ -52,6 +55,7 @@ async def lifespan(app: FastAPI):
         geoip.close()
     await peeringdb.close()
     await ripe_atlas.close()
+    await ripestat.close()
     _orchestrator = None
 
 
