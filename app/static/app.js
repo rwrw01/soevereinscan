@@ -250,8 +250,8 @@ function getAlternative(orgKey) {
         "amazon": "Europese alternatieven: Hetzner (Duitsland), Scaleway (Frankrijk)",
         "microsoft": "Europese alternatieven: Nextcloud, Collabora",
         "adobe": "Tip: lettertypen zelf hosten op uw eigen server",
-        "facebook": "Tip: tracking verwijderen, niet relevant voor overheidsdienstverlening",
-        "pinterest": "Tip: tracking verwijderen, niet relevant voor overheidsdienstverlening",
+        "facebook": "Tip: overweeg of deze tracking noodzakelijk is voor uw website",
+        "pinterest": "Tip: overweeg of deze tracking noodzakelijk is voor uw website",
         "doubleclick": "Tip: advertentietracking verwijderen",
         "hotjar": "Europees alternatief: Open Web Analytics",
     };
@@ -569,7 +569,7 @@ function renderImprovementPath(orgMap, currentAvg, ipList) {
     if (hasTracking) {
         steps.push({
             title: "Verwijder onnodige tracking",
-            description: "Verwijder tracking pixels en advertentiediensten. Deze zijn niet nodig voor overheidsdienstverlening.",
+            description: "Verwijder tracking pixels en advertentiediensten die niet noodzakelijk zijn voor uw website.",
             timeline: "1-2 weken",
             who: "Leverancier",
             keywords: ["pixel", "track", "pinterest", "facebook", "doubleclick", "fb.com", "hotjar"],
