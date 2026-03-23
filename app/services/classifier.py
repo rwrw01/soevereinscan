@@ -84,8 +84,9 @@ def classify_jurisdiction(
         )
         return JurisdictionResult(level=4, label=SOVEREIGNTY_LABELS[4], reasons=reasons)
 
-    # Level 3: server in EU AND (parent unknown or peeringdb unknown)
-    if server_in_eu and (parent_country is None or not peeringdb_known):
+    # Level 3: server in EU AND parent unknown AND peeringdb unknown
+    # Important: do NOT catch non-EU parents here — those should fall through to level 2
+    if server_in_eu and parent_country is None and not peeringdb_known:
         reasons.append(f"Server in {geoip.country_code}")
         if parent_country is None:
             reasons.append("Moederbedrijf onbekend")
