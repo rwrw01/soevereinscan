@@ -97,6 +97,11 @@ class ScanOrchestrator:
                     geoip_result.asn_org or ""
                 )
 
+                # PeeringDB fallback: if manual mapping has no result, use PeeringDB org data
+                if parent is None and peeringdb_result and peeringdb_result.org_name:
+                    parent = peeringdb_result.org_name
+                    parent_country = peeringdb_result.org_country
+
                 jurisdiction = classify_jurisdiction(
                     geoip_result, peeringdb_result, parent, parent_country
                 )

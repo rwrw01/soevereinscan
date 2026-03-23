@@ -11,6 +11,16 @@ EU_COUNTRIES = {
     "CH",
 }
 
+# Countries with EU adequacy decision — not EU but considered adequate for data protection
+ADEQUATE_COUNTRIES = {
+    "GB",  # United Kingdom (post-Brexit adequacy decision)
+    "JP",  # Japan
+    "KR",  # South Korea
+    "NZ",  # New Zealand
+    "IL",  # Israel
+    "CH",  # Switzerland (already in EU_COUNTRIES, but listed for completeness)
+}
+
 SOVEREIGNTY_LABELS = {
     5: "Volledig soeverein",
     4: "Grotendeels soeverein",
@@ -66,6 +76,14 @@ def classify_jurisdiction(
             reasons.append("PeeringDB-gegevens niet beschikbaar")
         return JurisdictionResult(level=4, label=SOVEREIGNTY_LABELS[4], reasons=reasons)
 
+    # Level 4 (alt): no parent from manual mapping, but PeeringDB confirms EU organization
+    if server_in_eu and parent_country is None and peeringdb_in_eu:
+        reasons.append(
+            f"Server in {geoip.country_code}, "
+            f"netwerkeigenaar {peeringdb.org_name} in {peeringdb.org_country} (PeeringDB)"
+        )
+        return JurisdictionResult(level=4, label=SOVEREIGNTY_LABELS[4], reasons=reasons)
+
     # Level 3: server in EU AND (parent unknown or peeringdb unknown)
     if server_in_eu and (parent_country is None or not peeringdb_known):
         reasons.append(f"Server in {geoip.country_code}")
@@ -73,6 +91,14 @@ def classify_jurisdiction(
             reasons.append("Moederbedrijf onbekend")
         if not peeringdb_known:
             reasons.append("PeeringDB-gegevens niet beschikbaar")
+        return JurisdictionResult(level=3, label=SOVEREIGNTY_LABELS[3], reasons=reasons)
+
+    # Level 3 (adequate): parent in adequate country (GB, JP, etc.) and server in EU
+    if server_in_eu and parent_country in ADEQUATE_COUNTRIES and parent_country not in EU_COUNTRIES:
+        reasons.append(
+            f"Moederbedrijf {parent_company} in {parent_country} (adequaatheidsbesluit), "
+            f"server in {geoip.country_code}"
+        )
         return JurisdictionResult(level=3, label=SOVEREIGNTY_LABELS[3], reasons=reasons)
 
     # Level 2: non-EU parent AND server in EU

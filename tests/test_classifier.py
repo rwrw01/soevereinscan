@@ -54,3 +54,32 @@ def test_level_3_eu_server_known_parent_unknown_peeringdb():
     result = classify_jurisdiction(geoip, None, parent_company="TransIP", parent_country="NL")
     assert result.level == 4
     assert result.label == "Grotendeels soeverein"
+
+
+def test_level_4_alt_peeringdb_fallback_eu():
+    """Server in EU, no parent mapping, but PeeringDB confirms EU org -> level 4."""
+    geoip = GeoIPResult(asn=12345, asn_org="Some Dutch ISP", country_code="NL", city="Amsterdam", latitude=52.37, longitude=4.89)
+    peeringdb = PeeringDBResult(org_name="Some Dutch ISP B.V.", org_country="NL", net_type="NSP")
+    result = classify_jurisdiction(geoip, peeringdb, parent_company=None, parent_country=None)
+    assert result.level == 4
+    assert result.label == "Grotendeels soeverein"
+    assert "PeeringDB" in result.reasons[0]
+
+
+def test_level_3_adequate_country_gb_parent_eu_server():
+    """GB parent (adequacy decision), EU server -> level 3."""
+    geoip = GeoIPResult(asn=5089, asn_org="Virgin Media", country_code="NL", city="Amsterdam", latitude=52.37, longitude=4.89)
+    peeringdb = PeeringDBResult(org_name="Virgin Media", org_country="GB", net_type="NSP")
+    result = classify_jurisdiction(geoip, peeringdb, parent_company="Virgin Media", parent_country="GB")
+    assert result.level == 3
+    assert result.label == "Gedeeltelijk soeverein"
+    assert "adequaatheidsbesluit" in result.reasons[0]
+
+
+def test_level_0_no_data_at_all():
+    """Absolutely no data available -> level 0."""
+    geoip = GeoIPResult(asn=None, asn_org=None, country_code=None, city=None, latitude=None, longitude=None)
+    result = classify_jurisdiction(geoip, None, parent_company=None, parent_country=None)
+    assert result.level == 0
+    assert result.label == "Niet soeverein"
+    assert "Onvoldoende gegevens" in result.reasons[0]
