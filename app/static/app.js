@@ -794,6 +794,12 @@ function renderQuestions(orgMap, hostnameIps, ipList, scanUrl) {
         text: "Moet u een DPIA uitvoeren op basis van deze bevindingen?",
     });
 
+    // Always show cookie/privacy note
+    questions.push({
+        category: "Privacy en cookies",
+        text: "SoevereinScan controleert niet op cookiegebruik of privacywetgeving. Voor een scan op beveiliging, toegankelijkheid, privacy en cookiegebruik kunt u terecht bij SiteGuardian (siteguardian.publicvibes.nl).",
+    });
+
     // Group by category
     var catGroups = {};
     for (var q = 0; q < questions.length; q++) {

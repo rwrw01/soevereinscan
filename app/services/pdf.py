@@ -362,6 +362,11 @@ def _build_questions(org_map: dict, hostname_ips: dict) -> list[str]:
         "Moet u op basis van deze bevindingen een DPIA "
         "(Data Protection Impact Assessment) uitvoeren?"
     )
+    questions.append(
+        "SoevereinScan controleert niet op cookiegebruik of privacywetgeving. "
+        "Voor een scan op beveiliging, toegankelijkheid, privacy en cookiegebruik "
+        "kunt u terecht bij SiteGuardian (siteguardian.publicvibes.nl)."
+    )
     return questions
 
 
