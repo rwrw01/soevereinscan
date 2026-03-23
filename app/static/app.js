@@ -108,6 +108,7 @@ function countryName(code) {
         "AT": "Oostenrijk", "ES": "Spanje", "IT": "Italie", "NO": "Noorwegen",
         "DK": "Denemarken", "PL": "Polen", "CZ": "Tsjechie", "JP": "Japan",
         "SG": "Singapore", "AU": "Australie", "CA": "Canada", "BR": "Brazilie",
+        "LU": "Luxemburg",
     };
     return names[code] || code;
 }
@@ -136,39 +137,6 @@ function groupByOrganisation(ipList) {
     return orgMap;
 }
 
-function generateRecommendations(orgMap) {
-    var tips = {
-        "google": {text: "Stap over op een Europees analytics-pakket zoals Matomo of Fathom. Veel gemeentelijke webhosters bieden dit standaard aan.", cost: "Weinig", who: "Leverancier"},
-        "facebook": {text: "Verwijder de Meta/Facebook tracking pixel. Een gemeentelijke website heeft geen advertentie-tracking nodig.", cost: "Weinig", who: "Leverancier"},
-        "pinterest": {text: "Verwijder de Pinterest tracking pixel. Niet relevant voor gemeentelijke dienstverlening.", cost: "Weinig", who: "Leverancier"},
-        "doubleclick": {text: "Verwijder de Google Ads/DoubleClick-koppeling. Advertentietracking hoort niet op een overheidswebsite.", cost: "Weinig", who: "Leverancier"},
-        "cloudflare": {text: "Bespreek met uw leverancier of het mogelijk is om over te stappen naar een Europees CDN, zoals BunnyCDN of KeyCDN.", cost: "Midden", who: "Leverancier"},
-        "akamai": {text: "Akamai is een Amerikaans bedrijf. Bespreek met uw leverancier of een Europees CDN-alternatief mogelijk is.", cost: "Midden", who: "Leverancier"},
-        "fastly": {text: "Fastly is een Amerikaans bedrijf. Bespreek met uw leverancier of een Europees alternatief mogelijk is.", cost: "Midden", who: "Leverancier"},
-        "adobe": {text: "Host lettertypen op uw eigen webserver in plaats van ze bij Adobe op te halen. Dit is een eenvoudige technische aanpassing.", cost: "Weinig", who: "Leverancier"},
-        "amazon": {text: "Uw website draait op Amazon Web Services (Amerikaans). Bespreek met uw leverancier of Europese hosting mogelijk is.", cost: "Veel", who: "Gemeente + Leverancier"},
-        "microsoft": {text: "Microsoft-diensten vallen onder Amerikaanse jurisdictie. Bespreek met uw leverancier of een Europees alternatief haalbaar is.", cost: "Veel", who: "Gemeente + Leverancier"},
-    };
-    var recs = [];
-    var seen = {};
-    var keys = Object.keys(orgMap);
-    for (var i = 0; i < keys.length; i++) {
-        var orgKey = keys[i];
-        var org = orgMap[orgKey];
-        if (org.level >= 4) continue;
-        var tipKeys = Object.keys(tips);
-        for (var j = 0; j < tipKeys.length; j++) {
-            var keyword = tipKeys[j];
-            if (orgKey.indexOf(keyword) !== -1 && !seen[keyword]) {
-                seen[keyword] = true;
-                recs.push(tips[keyword]);
-                break;
-            }
-        }
-    }
-    return recs;
-}
-
 function extractDomain(url) {
     try {
         return new URL(url).hostname;
@@ -184,14 +152,6 @@ function isThirdParty(domain, scanUrl) {
     var scanBase = scanParts.slice(-2).join(".");
     var domBase = domParts.slice(-2).join(".");
     return domBase !== scanBase;
-}
-
-function categorizeDomain(domain) {
-    var d = domain.toLowerCase();
-    if (/analytics|gtag|ga\.|google-analytics|googletagmanager|matomo|piwik|fathom|simanalytics/.test(d)) return "Bezoekersanalyse";
-    if (/pixel|track|pinterest|facebook|doubleclick|fb\.com|hotjar/.test(d)) return "Advertentie- en trackingdiensten";
-    if (/fonts\.|typekit|cdn\.|cdn-|cloudfront|akamai|fastly|cloudflare|unpkg|jsdelivr|jquery|bunny/.test(d)) return "Externe inhoud en lettertypes";
-    return "Overige diensten";
 }
 
 function collectTreeDomains(node, list) {
@@ -215,11 +175,118 @@ function findIpForHostname(hostname, ipAnalyses, hostnameIps) {
             }
         }
     }
-    // Fallback: try hostname match on ip fields
     for (var j = 0; j < ipAnalyses.length; j++) {
         if (ipAnalyses[j].hostname === hostname) return ipAnalyses[j];
     }
     return null;
+}
+
+/* --- Energy label scoring --- */
+
+function scoreToLabel(avg) {
+    if (avg >= 4.5) return "A";
+    if (avg >= 4.0) return "B";
+    if (avg >= 3.0) return "C";
+    if (avg >= 2.0) return "D";
+    if (avg >= 1.0) return "E";
+    return "F";
+}
+
+function getTopActions(orgMap) {
+    var actions = [];
+    var orgKeys = Object.keys(orgMap);
+    var hasTracking = false;
+    var hasNonEuAnalytics = false;
+    var hasNonEuCdn = false;
+    var hasNonEuHosting = false;
+    var hasNonEuFonts = false;
+
+    for (var i = 0; i < orgKeys.length; i++) {
+        var key = orgKeys[i];
+        var org = orgMap[key];
+        if (org.level >= 4) continue;
+
+        if (/pixel|track|pinterest|facebook|doubleclick|fb\.com|hotjar/.test(key)) {
+            hasTracking = true;
+        }
+        if (/analytics|gtag|google-analytics|googletagmanager/.test(key) || (key.indexOf("google") !== -1 && !hasTracking)) {
+            hasNonEuAnalytics = true;
+        }
+        if (/cloudflare|akamai|fastly|cloudfront|bunny|cdn/.test(key)) {
+            hasNonEuCdn = true;
+        }
+        if (/amazon|aws|microsoft|azure/.test(key)) {
+            hasNonEuHosting = true;
+        }
+        if (/adobe|typekit|fonts\.googleapis/.test(key)) {
+            hasNonEuFonts = true;
+        }
+    }
+
+    if (hasTracking) {
+        actions.push("onnodige tracking te verwijderen");
+    }
+    if (hasNonEuAnalytics && actions.length < 2) {
+        actions.push("over te stappen op Europese bezoekersstatistieken");
+    }
+    if (hasNonEuFonts && actions.length < 2) {
+        actions.push("lettertypen zelf te hosten");
+    }
+    if (hasNonEuCdn && actions.length < 2) {
+        actions.push("een Europees CDN-alternatief te overwegen");
+    }
+    if (hasNonEuHosting && actions.length < 2) {
+        actions.push("Europese hosting te bespreken met uw leverancier");
+    }
+    return actions;
+}
+
+function getAlternative(orgKey) {
+    var alts = {
+        "cloudflare": "Europese alternatieven: Gcore (Luxemburg) en OVHcloud (Frankrijk)",
+        "google": "Europees alternatief: Matomo of Fathom",
+        "akamai": "Europese alternatieven: Gcore (Luxemburg) en OVHcloud (Frankrijk)",
+        "fastly": "Europese alternatieven: Gcore (Luxemburg) en OVHcloud (Frankrijk)",
+        "amazon": "Europese alternatieven: Hetzner (Duitsland), Scaleway (Frankrijk)",
+        "microsoft": "Europese alternatieven: Nextcloud, Collabora",
+        "adobe": "Tip: lettertypen zelf hosten op uw eigen server",
+        "facebook": "Tip: tracking verwijderen, niet relevant voor overheidsdienstverlening",
+        "pinterest": "Tip: tracking verwijderen, niet relevant voor overheidsdienstverlening",
+        "doubleclick": "Tip: advertentietracking verwijderen",
+        "hotjar": "Europees alternatief: Open Web Analytics",
+    };
+    var altKeys = Object.keys(alts);
+    for (var i = 0; i < altKeys.length; i++) {
+        if (orgKey.indexOf(altKeys[i]) !== -1) {
+            return alts[altKeys[i]];
+        }
+    }
+    return null;
+}
+
+/* Build reverse map: org -> hostnames */
+function buildOrgHostnames(orgMap, hostnameIps) {
+    var orgHostnames = {};
+    var hostKeys = Object.keys(hostnameIps);
+    var orgKeys = Object.keys(orgMap);
+
+    for (var oi = 0; oi < orgKeys.length; oi++) {
+        var orgKey = orgKeys[oi];
+        var org = orgMap[orgKey];
+        var matchedHostnames = [];
+
+        for (var hi = 0; hi < hostKeys.length; hi++) {
+            var hostname = hostKeys[hi];
+            var ips = hostnameIps[hostname];
+            for (var ii = 0; ii < ips.length; ii++) {
+                if (org.ips.indexOf(ips[ii]) !== -1 && matchedHostnames.indexOf(hostname) === -1) {
+                    matchedHostnames.push(hostname);
+                }
+            }
+        }
+        orgHostnames[orgKey] = matchedHostnames;
+    }
+    return orgHostnames;
 }
 
 /* --- Main render --- */
@@ -248,45 +315,42 @@ function renderResults(data) {
     var averageLevel = (levelSum / total).toFixed(1);
 
     // Count sovereign vs non-sovereign ORGANISATIONS
-    var sovOrgCount = 0;
-    var nonSovOrgCount = 0;
+    var euOrgCount = 0;
+    var nonEuOrgCount = 0;
     for (var k = 0; k < orgKeys.length; k++) {
         if (orgMap[orgKeys[k]].level >= 4) {
-            sovOrgCount++;
-        } else if (orgMap[orgKeys[k]].level <= 2) {
-            nonSovOrgCount++;
+            euOrgCount++;
+        } else {
+            nonEuOrgCount++;
         }
     }
+
+    // Build org->hostnames map
+    var orgHostnames = buildOrgHostnames(orgMap, hostnameIps);
 
     // Redirect notice
     renderRedirectNotice(summary);
 
-    // 1. Executive Summary
-    renderExecutiveSummary(averageLevel, totalOrgs, sovOrgCount, nonSovOrgCount, orgMap);
+    // 1. Score Summary
+    renderScoreSummary(averageLevel, totalOrgs, euOrgCount, nonEuOrgCount, orgMap);
 
-    // 2. Recommendations
-    renderRecommendations(orgMap);
+    // 2. Services (grouped by provider)
+    renderServices(orgMap, orgHostnames, data.url);
 
-    // 3. Uw digitale leveranciers
-    renderChoices(summary.resource_tree, ipList, data.url, hostnameIps, orgMap);
-
-    // 4. Vragen voor uw organisatie
-    renderQuestions(orgMap, hostnameIps, ipList, data.url);
-
-    // 5. Verbeterpad
+    // 3. Improvement path
     renderImprovementPath(orgMap, averageLevel, ipList);
 
-    // 6. Visueel overzicht
+    // 4. More info (section 4)
+    renderQuestions(orgMap, hostnameIps, ipList, data.url);
     renderDistribution(distribution, total);
     if (summary.resource_tree) {
         renderTree(summary.resource_tree, data.url, ipList, hostnameIps);
     }
     renderCountryBars(ipList);
     renderMap(ipList);
-
-    // 7. Technische details
     renderServiceTable(orgMap, hostnameIps);
     renderIpTable(ipList);
+    renderLegalBackground();
 }
 
 /* --- Redirect notice --- */
@@ -316,9 +380,9 @@ function renderRedirectNotice(summary) {
     container.appendChild(p2);
 }
 
-/* --- Executive Summary --- */
+/* --- SECTION 1: Score Summary --- */
 
-function renderExecutiveSummary(averageLevel, totalOrgs, sovCount, nonSovCount, orgMap) {
+function renderScoreSummary(averageLevel, totalOrgs, euCount, nonEuCount, orgMap) {
     var circle = document.getElementById("score-circle");
     var scoreValue = document.getElementById("score-value");
     scoreValue.textContent = averageLevel;
@@ -332,268 +396,296 @@ function renderExecutiveSummary(averageLevel, totalOrgs, sovCount, nonSovCount, 
         circle.className = "score-circle score-red";
     }
 
+    // Energy label
+    var label = scoreToLabel(avg);
+    var labelEl = document.getElementById("energy-label");
+    labelEl.textContent = label;
+    labelEl.className = "energy-label energy-label-" + label.toLowerCase();
+
+    // Summary text
     var summaryText = document.getElementById("exec-summary-text");
-    summaryText.textContent = "Van de " + totalOrgs + " diensten die uw website gebruikt, scoren " +
-        sovCount + " soeverein (niveau 4-5) en " + nonSovCount + " niet-soeverein (niveau 0-2).";
+    summaryText.textContent = "Uw website gebruikt " + totalOrgs + " diensten. " +
+        euCount + " daarvan zijn Europees. " + nonEuCount + " niet.";
 
-    // Legal context
-    var legalContainer = document.getElementById("legal-context");
-    if (legalContainer) {
-        legalContainer.textContent = "";
-
-        var legalTitle = document.createElement("h4");
-        legalTitle.textContent = "Juridische context";
-        legalContainer.appendChild(legalTitle);
-
-        var legalP1 = document.createElement("p");
-        legalP1.textContent = "Diensten van Amerikaanse bedrijven vallen onder de CLOUD Act en FISA Section 702. Dat betekent niet dat Amerikaanse inlichtingendiensten actief meekijken naar gegevens van uw inwoners -- gemeentelijke websites zijn zelden een doelwit. Wel betekent het dat de juridische bescherming ontbreekt: een Amerikaans bedrijf kan door de Amerikaanse overheid verplicht worden gegevens te verstrekken, ook als die in een Europees datacenter staan.";
-        legalContainer.appendChild(legalP1);
-
-        var legalP2 = document.createElement("p");
-        legalP2.textContent = "De Autoriteit Persoonsgegevens heeft tot nu toe geen gemeenten beboet hiervoor. Het risico op een boete is zeer klein. De vraag is of u als gemeente kunt uitleggen dat u bewuste keuzes heeft gemaakt.";
-        legalContainer.appendChild(legalP2);
-    }
-
-    // Inform yourself
-    var informContainer = document.getElementById("inform-yourself");
-    if (informContainer) {
-        informContainer.textContent = "";
-
-        var informTitle = document.createElement("h4");
-        informTitle.textContent = "Informeer uzelf";
-        informContainer.appendChild(informTitle);
-
-        var informIntro = document.createElement("p");
-        informIntro.textContent = "Als bestuurder hoeft u niet zelf te handelen, maar u moet weten hoe dit is geregeld:";
-        informContainer.appendChild(informIntro);
-
-        var questions = [
-            "Beheren wij deze website zelf, of is dit uitbesteed aan een leverancier?",
-            "Heeft onze leverancier een verwerkersovereenkomst, en wat staat daarin over subverwerkers buiten de EU?",
-            "Is er bewust gekozen voor deze diensten, of zijn ze 'meegekomen' met het platform?",
-        ];
-
-        var ul = document.createElement("ul");
-        for (var qi = 0; qi < questions.length; qi++) {
-            var li = document.createElement("li");
-            li.textContent = questions[qi];
-            ul.appendChild(li);
-        }
-        informContainer.appendChild(ul);
+    // Action text
+    var actionText = document.getElementById("exec-action-text");
+    var actions = getTopActions(orgMap);
+    if (actions.length > 0) {
+        actionText.textContent = "Dit kunt u verbeteren door: " + actions.join(" en ") + ".";
+    } else {
+        actionText.textContent = "Uw website scoort goed op digitale soevereiniteit.";
     }
 }
 
-/* --- Recommendations with cost table --- */
+/* --- SECTION 2: Services grouped by provider --- */
 
-function renderRecommendations(orgMap) {
-    var container = document.getElementById("recommendations-section");
+function renderServices(orgMap, orgHostnames, scanUrl) {
+    var container = document.getElementById("services-container");
     if (!container) return;
     container.textContent = "";
 
-    var recs = generateRecommendations(orgMap);
-    if (recs.length === 0) return;
+    var orgKeys = Object.keys(orgMap);
 
-    var title = document.createElement("h3");
-    title.textContent = "Aanbevelingen";
-    container.appendChild(title);
+    // Sort: worst level first
+    orgKeys.sort(function (a, b) { return orgMap[a].level - orgMap[b].level; });
 
-    var table = document.createElement("table");
-    table.className = "rec-table";
+    for (var i = 0; i < orgKeys.length; i++) {
+        var orgKey = orgKeys[i];
+        var org = orgMap[orgKey];
 
-    var thead = document.createElement("thead");
-    var headerRow = document.createElement("tr");
-    var headers = ["Aanbeveling", "Kosten", "Verantwoordelijk"];
-    for (var h = 0; h < headers.length; h++) {
-        var th = document.createElement("th");
-        th.textContent = headers[h];
-        headerRow.appendChild(th);
+        var row = document.createElement("div");
+        row.className = "service-row";
+        if (org.level >= 4) {
+            row.classList.add("service-row-ok");
+        } else if (org.level <= 2) {
+            row.classList.add("service-row-warn");
+        }
+
+        // Provider name
+        var nameSpan = document.createElement("span");
+        nameSpan.className = "service-name";
+        nameSpan.textContent = org.name;
+        row.appendChild(nameSpan);
+
+        // Country
+        if (org.country) {
+            var countrySpan = document.createElement("span");
+            countrySpan.className = "service-country";
+            countrySpan.textContent = countryName(org.country);
+            row.appendChild(countrySpan);
+        }
+
+        // Level badge
+        var badge = document.createElement("span");
+        badge.className = "badge badge-level-" + org.level;
+        badge.textContent = "Niveau " + org.level;
+        row.appendChild(badge);
+
+        // Action hint: check if any hostnames are third-party
+        var hostnames = orgHostnames[orgKey] || [];
+        var hasThirdParty = false;
+        for (var h = 0; h < hostnames.length; h++) {
+            if (isThirdParty(hostnames[h], scanUrl)) {
+                hasThirdParty = true;
+                break;
+            }
+        }
+
+        if (org.level < 4) {
+            var actionSpan = document.createElement("span");
+            actionSpan.className = "service-action";
+            if (hasThirdParty) {
+                actionSpan.textContent = "U kunt dit wijzigen";
+            } else {
+                actionSpan.textContent = "Dit hoort bij uw websitepakket";
+            }
+            row.appendChild(actionSpan);
+        }
+
+        // Alternative suggestion
+        var alt = getAlternative(orgKey);
+        if (alt && org.level < 4) {
+            var altSpan = document.createElement("span");
+            altSpan.className = "service-alternative";
+            altSpan.textContent = alt;
+            row.appendChild(altSpan);
+        }
+
+        // Hostnames as monospace
+        if (hostnames.length > 0) {
+            var hostsSpan = document.createElement("span");
+            hostsSpan.className = "service-hosts";
+            hostsSpan.textContent = hostnames.join(", ");
+            row.appendChild(hostsSpan);
+        }
+
+        container.appendChild(row);
     }
-    thead.appendChild(headerRow);
-    table.appendChild(thead);
 
-    var tbody = document.createElement("tbody");
-    for (var i = 0; i < recs.length; i++) {
-        var rec = recs[i];
-        var row = document.createElement("tr");
-
-        var tdText = document.createElement("td");
-        var tipIcon = document.createElement("span");
-        tipIcon.className = "rec-icon";
-        tipIcon.textContent = "[tip] ";
-        tdText.appendChild(tipIcon);
-        var textSpan = document.createElement("span");
-        textSpan.textContent = rec.text;
-        tdText.appendChild(textSpan);
-        row.appendChild(tdText);
-
-        var tdCost = document.createElement("td");
-        var costBadge = document.createElement("span");
-        costBadge.className = "cost-badge cost-" + rec.cost.toLowerCase();
-        costBadge.textContent = rec.cost;
-        tdCost.appendChild(costBadge);
-        row.appendChild(tdCost);
-
-        var tdWho = document.createElement("td");
-        var whoBadge = document.createElement("span");
-        whoBadge.className = "who-badge";
-        whoBadge.textContent = rec.who;
-        tdWho.appendChild(whoBadge);
-        row.appendChild(tdWho);
-
-        tbody.appendChild(row);
+    if (orgKeys.length === 0) {
+        var emptyP = document.createElement("p");
+        emptyP.className = "section-desc";
+        emptyP.textContent = "Geen diensten gevonden.";
+        container.appendChild(emptyP);
     }
-    table.appendChild(tbody);
-    container.appendChild(table);
 }
 
-/* --- Uw digitale leveranciers (choices) --- */
+/* --- SECTION 3: Improvement path with energy labels --- */
 
-var catOrder = ["Websitehosting", "Bezoekersanalyse", "Advertentie- en trackingdiensten", "Externe inhoud en lettertypes", "Overige diensten"];
-
-var catDescriptions = {
-    "Websitehosting": "Hier draait uw website. De hostingpartij heeft volledige toegang tot alle gegevens die op de website worden verwerkt.",
-    "Bezoekersanalyse": "Deze diensten meten het bezoek op uw website. Zij verwerken IP-adressen en surfgedrag van uw inwoners.",
-    "Advertentie- en trackingdiensten": "Deze diensten volgen bezoekers voor advertentiedoeleinden. Op een overheidswebsite is dit vrijwel nooit noodzakelijk.",
-    "Externe inhoud en lettertypes": "Inhoud die bij een externe partij wordt opgehaald. Bij elk bezoek wordt het IP-adres van uw inwoner naar deze partij gestuurd.",
-    "Overige diensten": "Diensten die niet in een andere categorie vallen. Controleer of u weet wat deze diensten doen.",
-};
-
-var catActions = {
-    "Websitehosting": "Actie: Gemeente + Leverancier",
-    "Bezoekersanalyse": "Actie: Leverancier",
-    "Advertentie- en trackingdiensten": "Actie: Leverancier",
-    "Externe inhoud en lettertypes": "Actie: Leverancier",
-    "Overige diensten": "Actie: Onderzoek nodig",
-};
-
-function renderChoices(treeData, ipAnalyses, scanUrl, hostnameIps, orgMap) {
-    var container = document.getElementById("choices-container");
+function renderImprovementPath(orgMap, currentAvg, ipList) {
+    var container = document.getElementById("improvement-path");
     if (!container) return;
     container.textContent = "";
 
-    // Build categories from hostname_ips mapping
-    var categories = {};
-    var hostKeys = Object.keys(hostnameIps);
+    var avg = parseFloat(currentAvg);
+    var currentLabel = scoreToLabel(avg);
+    var totalIps = ipList.length || 1;
 
-    if (hostKeys.length === 0 && treeData) {
-        // Fallback: use tree domains
-        var allNodes = [];
-        collectTreeDomains(treeData, allNodes);
-        for (var n = 0; n < allNodes.length; n++) {
-            hostKeys.push(allNodes[n].domain || "");
+    // Check if already good
+    if (avg >= 4.0) {
+        var goodP = document.createElement("p");
+        goodP.className = "improvement-intro";
+        goodP.textContent = "Uw website heeft een " + currentLabel + ". Er zijn geen directe verbeterstappen nodig.";
+        container.appendChild(goodP);
+        return;
+    }
+
+    var introP = document.createElement("p");
+    introP.className = "improvement-intro";
+    introP.textContent = "Uw website heeft nu een " + currentLabel + ". Met de onderstaande stappen kunt u dit verbeteren.";
+    container.appendChild(introP);
+
+    // Build steps dynamically based on what was found
+    var steps = [];
+    var orgKeys = Object.keys(orgMap);
+
+    // Check for tracking
+    var hasTracking = false;
+    for (var ti = 0; ti < orgKeys.length; ti++) {
+        if (/pixel|track|pinterest|facebook|doubleclick|fb\.com|hotjar/.test(orgKeys[ti]) && orgMap[orgKeys[ti]].level < 4) {
+            hasTracking = true;
+            break;
         }
     }
 
-    for (var i = 0; i < hostKeys.length; i++) {
-        var hostname = hostKeys[i];
-        if (!hostname) continue;
-        var ipInfo = findIpForHostname(hostname, ipAnalyses, hostnameIps);
-        var lvl = ipInfo ? getSovereigntyLevel(ipInfo) : null;
-        var thirdParty = isThirdParty(hostname, scanUrl);
-
-        var cat;
-        if (!thirdParty) {
-            cat = "Websitehosting";
-        } else {
-            cat = categorizeDomain(hostname);
+    // Check for non-EU analytics
+    var hasNonEuAnalytics = false;
+    for (var ai = 0; ai < orgKeys.length; ai++) {
+        if (/analytics|gtag|google-analytics|googletagmanager|google/.test(orgKeys[ai]) && orgMap[orgKeys[ai]].level < 4) {
+            hasNonEuAnalytics = true;
+            break;
         }
+    }
 
-        if (!categories[cat]) categories[cat] = [];
-        categories[cat].push({
-            domain: hostname,
-            level: lvl,
-            org: ipInfo ? (ipInfo.parent_company || ipInfo.asn_org || "-") : "-",
-            country: ipInfo ? (ipInfo.country_code || "-") : "-",
-            thirdParty: thirdParty,
+    // Check for non-EU infra
+    var hasNonEuInfra = false;
+    for (var ii = 0; ii < orgKeys.length; ii++) {
+        if (/cloudflare|akamai|fastly|amazon|aws|microsoft|azure|adobe|typekit/.test(orgKeys[ii]) && orgMap[orgKeys[ii]].level < 4) {
+            hasNonEuInfra = true;
+            break;
+        }
+    }
+
+    if (hasTracking) {
+        steps.push({
+            title: "Verwijder onnodige tracking",
+            description: "Verwijder tracking pixels en advertentiediensten. Deze zijn niet nodig voor overheidsdienstverlening.",
+            timeline: "1-2 weken",
+            who: "Leverancier",
+            keywords: ["pixel", "track", "pinterest", "facebook", "doubleclick", "fb.com", "hotjar"],
+            targetLevel: 5,
         });
     }
 
-    for (var c = 0; c < catOrder.length; c++) {
-        var catName = catOrder[c];
-        if (!categories[catName] || categories[catName].length === 0) continue;
+    if (hasNonEuAnalytics) {
+        steps.push({
+            title: "Stap over op Europese bezoekersstatistieken",
+            description: "Vervang Google Analytics door een Europees alternatief zoals Matomo of Fathom. Veel webhosters bieden dit standaard aan.",
+            timeline: "2-4 weken",
+            who: "Leverancier",
+            keywords: ["analytics", "gtag", "google-analytics", "googletagmanager", "google"],
+            targetLevel: 4,
+        });
+    }
 
-        var catDiv = document.createElement("div");
-        catDiv.className = "choice-category";
+    if (hasNonEuInfra) {
+        steps.push({
+            title: "Bespreek Europese alternatieven voor infrastructuur",
+            description: "Bespreek met uw leverancier of CDN, hosting of lettertypen bij een Europese partij ondergebracht kunnen worden.",
+            timeline: "1-6 maanden",
+            who: "Organisatie + Leverancier",
+            keywords: ["cloudflare", "akamai", "fastly", "amazon", "aws", "microsoft", "azure", "adobe", "typekit", "cloudfront", "fonts."],
+            targetLevel: 4,
+        });
+    }
 
-        var catHeader = document.createElement("h5");
-        catHeader.className = "choice-cat-header";
-        catHeader.textContent = catName;
-        catDiv.appendChild(catHeader);
+    // Limit to max 3 steps
+    if (steps.length > 3) {
+        steps = steps.slice(0, 3);
+    }
 
-        // Category description
-        if (catDescriptions[catName]) {
-            var descP = document.createElement("p");
-            descP.className = "section-desc";
-            descP.textContent = catDescriptions[catName];
-            catDiv.appendChild(descP);
-        }
+    // Simulate scores
+    var simulatedLevels = {};
+    for (var oi = 0; oi < ipList.length; oi++) {
+        simulatedLevels[ipList[oi].ip_address] = getSovereigntyLevel(ipList[oi]);
+    }
 
-        // Category action
-        if (catActions[catName]) {
-            var actionSpan = document.createElement("span");
-            actionSpan.className = "who-badge";
-            actionSpan.textContent = catActions[catName];
-            catDiv.appendChild(actionSpan);
-        }
+    for (var s = 0; s < steps.length; s++) {
+        var step = steps[s];
 
-        // Deduplicate by org within category
-        var seen = {};
-        var items = [];
-        for (var d = 0; d < categories[catName].length; d++) {
-            var item = categories[catName][d];
-            var key = item.org + "|" + item.domain;
-            if (!seen[key]) {
-                seen[key] = true;
-                items.push(item);
+        // Apply improvement
+        var hostIpKeys = Object.keys(orgMap);
+        for (var ok = 0; ok < hostIpKeys.length; ok++) {
+            var orgKeyLower = hostIpKeys[ok];
+            var matched = false;
+            for (var kw = 0; kw < step.keywords.length; kw++) {
+                if (orgKeyLower.indexOf(step.keywords[kw]) !== -1) {
+                    matched = true;
+                    break;
+                }
+            }
+            if (matched) {
+                var orgIps = orgMap[orgKeyLower].ips;
+                for (var oip = 0; oip < orgIps.length; oip++) {
+                    if (simulatedLevels[orgIps[oip]] < step.targetLevel) {
+                        simulatedLevels[orgIps[oip]] = step.targetLevel;
+                    }
+                }
             }
         }
 
-        for (var e = 0; e < items.length; e++) {
-            var it = items[e];
-            var row = document.createElement("div");
-            row.className = "choice-item";
-            if (it.level !== null && it.level <= 2) {
-                row.classList.add("choice-item-warn");
-            } else if (it.level !== null && it.level >= 4) {
-                row.classList.add("choice-item-ok");
-            }
-
-            // Description text
-            var info = document.createElement("span");
-            info.className = "choice-info";
-            var orgLabel = it.org !== "-" ? it.org : it.domain;
-            var countryLabel = it.country !== "-" ? countryName(it.country) : "";
-            if (countryLabel) {
-                info.textContent = orgLabel + " in " + countryLabel;
-            } else {
-                info.textContent = orgLabel;
-            }
-            row.appendChild(info);
-
-            // Level badge
-            if (it.level !== null) {
-                var lvlSpan = document.createElement("span");
-                lvlSpan.className = "badge badge-level-" + it.level;
-                lvlSpan.textContent = "Niveau " + it.level;
-                row.appendChild(lvlSpan);
-            }
-
-            // Beinvloedbaar tag
-            if (it.thirdParty) {
-                var tag = document.createElement("span");
-                tag.className = "choice-changeable";
-                tag.textContent = "beinvloedbaar";
-                row.appendChild(tag);
-            }
-
-            catDiv.appendChild(row);
+        // Calculate new average
+        var simSum = 0;
+        var simKeys = Object.keys(simulatedLevels);
+        for (var sk = 0; sk < simKeys.length; sk++) {
+            simSum += simulatedLevels[simKeys[sk]];
         }
+        var simAvg = (simSum / totalIps).toFixed(1);
+        var simLabel = scoreToLabel(parseFloat(simAvg));
 
-        container.appendChild(catDiv);
+        var stepDiv = document.createElement("div");
+        stepDiv.className = "improvement-step";
+
+        var stepTitle = document.createElement("h5");
+        stepTitle.textContent = "Stap " + (s + 1) + ": " + step.title;
+        stepDiv.appendChild(stepTitle);
+
+        var stepDesc = document.createElement("p");
+        stepDesc.textContent = step.description;
+        stepDiv.appendChild(stepDesc);
+
+        var metaDiv = document.createElement("div");
+        metaDiv.className = "step-meta";
+
+        var timeSpan = document.createElement("span");
+        timeSpan.className = "step-timeline";
+        timeSpan.textContent = "Doorlooptijd: " + step.timeline;
+        metaDiv.appendChild(timeSpan);
+
+        var whoSpan = document.createElement("span");
+        whoSpan.className = "step-who";
+        whoSpan.textContent = step.who;
+        metaDiv.appendChild(whoSpan);
+
+        stepDiv.appendChild(metaDiv);
+
+        var estimate = document.createElement("p");
+        estimate.className = "step-estimate";
+        estimate.textContent = "Verwachte score: " + simAvg + " / 5 (label " + simLabel + ")";
+        stepDiv.appendChild(estimate);
+
+        container.appendChild(stepDiv);
+    }
+
+    if (steps.length === 0) {
+        var noStepsP = document.createElement("p");
+        noStepsP.className = "section-desc";
+        noStepsP.textContent = "Bespreek met uw leverancier welke diensten bij Europese partijen ondergebracht kunnen worden.";
+        container.appendChild(noStepsP);
     }
 }
 
-/* --- Vragen voor uw organisatie --- */
+/* --- Vragen voor uw informatieadviseur (section 4) --- */
 
 function renderQuestions(orgMap, hostnameIps, ipList, scanUrl) {
     var container = document.getElementById("questions-container");
@@ -614,16 +706,20 @@ function renderQuestions(orgMap, hostnameIps, ipList, scanUrl) {
         }
     }
 
-    // For CDN/font services: is it part of website package?
+    // For third-party hostnames: is it part of website package?
     var hostKeys = Object.keys(hostnameIps);
+    var seenHostQuestion = {};
     for (var h = 0; h < hostKeys.length; h++) {
         var hostname = hostKeys[h];
-        var cat = categorizeDomain(hostname);
-        if (cat === "Externe inhoud en lettertypes" && isThirdParty(hostname, scanUrl)) {
-            questions.push({
-                category: "Externe diensten",
-                text: "Is " + hostname + " standaard bij uw websitepakket, of apart geconfigureerd?",
-            });
+        if (isThirdParty(hostname, scanUrl) && !seenHostQuestion[hostname]) {
+            seenHostQuestion[hostname] = true;
+            var ipInfo = findIpForHostname(hostname, ipList, hostnameIps);
+            if (ipInfo && getSovereigntyLevel(ipInfo) < 4) {
+                questions.push({
+                    category: "Externe diensten",
+                    text: "Is " + hostname + " standaard bij uw websitepakket, of apart geconfigureerd?",
+                });
+            }
         }
     }
 
@@ -683,140 +779,24 @@ function renderQuestions(orgMap, hostnameIps, ipList, scanUrl) {
     }
 }
 
-/* --- Verbeterpad naar niveau 4 --- */
+/* --- Legal background (section 4, neutral tone) --- */
 
-function renderImprovementPath(orgMap, currentAvg, ipList) {
-    var container = document.getElementById("improvement-path");
+function renderLegalBackground() {
+    var container = document.getElementById("legal-context");
     if (!container) return;
     container.textContent = "";
 
-    var orgKeys = Object.keys(orgMap);
-    var totalIps = ipList.length || 1;
+    var p1 = document.createElement("p");
+    p1.textContent = "Diensten van niet-Europese bedrijven kunnen onder buitenlandse wetgeving vallen, zoals de Amerikaanse CLOUD Act en FISA Section 702. Dit betekent dat een buitenlands bedrijf juridisch verplicht kan worden om gegevens te verstrekken aan de overheid van het land waar het hoofdkantoor gevestigd is, ook als de data in een Europees datacenter staan.";
+    container.appendChild(p1);
 
-    // Simulate step improvements
-    // Step 1: Remove tracking (set tracking orgs to level 5)
-    // Step 2: Replace analytics with EU alternative (set analytics orgs to level 4)
-    // Step 3: Self-host fonts/CDN (set font/CDN orgs to level 4)
-    // Step 4: All services at level 4+
+    var p2 = document.createElement("p");
+    p2.textContent = "De Rijksoverheid heeft in de Rijksvisie Digitale Soevereiniteit (december 2025) het belang onderstreept van bewuste keuzes bij de inzet van niet-Europese diensten. Het DICTU-toetsingsinstrument (januari 2026) biedt overheidsorganisaties een kader om deze risico's te beoordelen.";
+    container.appendChild(p2);
 
-    var steps = [
-        {
-            title: "Stap 1: Verwijder tracking en advertentiediensten",
-            description: "Verwijder alle tracking pixels en advertentiediensten. Dit zijn diensten die geen bijdrage leveren aan uw gemeentelijke dienstverlening.",
-            timeline: "1-2 weken",
-            cost: "Weinig",
-            keywords: ["pixel", "track", "pinterest", "facebook", "doubleclick", "fb.com", "hotjar"],
-            targetLevel: 5,
-        },
-        {
-            title: "Stap 2: Vervang analytics door Europees alternatief",
-            description: "Stap over van Google Analytics naar een Europees alternatief zoals Matomo of Fathom. Veel webhosters bieden dit standaard aan.",
-            timeline: "2-4 weken",
-            cost: "Weinig",
-            keywords: ["analytics", "gtag", "google-analytics", "googletagmanager"],
-            targetLevel: 4,
-        },
-        {
-            title: "Stap 3: Host lettertypen en externe inhoud zelf",
-            description: "Download externe lettertypen en host ze op uw eigen server. Vervang externe CDN-verwijzingen waar mogelijk.",
-            timeline: "1-3 weken",
-            cost: "Weinig",
-            keywords: ["fonts.", "typekit", "cdn.", "cdn-", "cloudfront", "unpkg", "jsdelivr", "jquery"],
-            targetLevel: 4,
-        },
-        {
-            title: "Stap 4: Bespreek hosting en overige diensten",
-            description: "Bespreek met uw leverancier of de hosting en overige diensten bij een Europese partij ondergebracht kunnen worden.",
-            timeline: "3-6 maanden",
-            cost: "Veel",
-            keywords: [],
-            targetLevel: 4,
-        },
-    ];
-
-    // Calculate simulated scores per step
-    var simulatedLevels = {};
-    for (var oi = 0; oi < ipList.length; oi++) {
-        simulatedLevels[ipList[oi].ip_address] = getSovereigntyLevel(ipList[oi]);
-    }
-
-    var introP = document.createElement("p");
-    introP.className = "section-desc";
-    introP.textContent = "Dit pad beschrijft concrete stappen om uw soevereiniteitsscore te verbeteren. De stappen zijn geordend van eenvoudig naar complex.";
-    container.appendChild(introP);
-
-    for (var s = 0; s < steps.length; s++) {
-        var step = steps[s];
-
-        // For step 4, set everything to targetLevel
-        if (step.keywords.length === 0) {
-            for (var allIp in simulatedLevels) {
-                if (simulatedLevels[allIp] < step.targetLevel) {
-                    simulatedLevels[allIp] = step.targetLevel;
-                }
-            }
-        } else {
-            // Apply improvement: find IPs whose hostnames match the keywords
-            var hostIpKeys = Object.keys(orgMap);
-            for (var ok = 0; ok < hostIpKeys.length; ok++) {
-                var orgKeyLower = hostIpKeys[ok];
-                var matched = false;
-                for (var kw = 0; kw < step.keywords.length; kw++) {
-                    if (orgKeyLower.indexOf(step.keywords[kw]) !== -1) {
-                        matched = true;
-                        break;
-                    }
-                }
-                if (matched) {
-                    var orgIps = orgMap[orgKeyLower].ips;
-                    for (var oip = 0; oip < orgIps.length; oip++) {
-                        simulatedLevels[orgIps[oip]] = step.targetLevel;
-                    }
-                }
-            }
-        }
-
-        // Calculate new average
-        var simSum = 0;
-        var simKeys = Object.keys(simulatedLevels);
-        for (var sk = 0; sk < simKeys.length; sk++) {
-            simSum += simulatedLevels[simKeys[sk]];
-        }
-        var simAvg = (simSum / totalIps).toFixed(1);
-
-        var stepDiv = document.createElement("div");
-        stepDiv.className = "improvement-step";
-
-        var stepTitle = document.createElement("h5");
-        stepTitle.textContent = step.title;
-        stepDiv.appendChild(stepTitle);
-
-        var stepDesc = document.createElement("p");
-        stepDesc.textContent = step.description;
-        stepDiv.appendChild(stepDesc);
-
-        var metaDiv = document.createElement("div");
-        metaDiv.className = "step-meta";
-
-        var timeSpan = document.createElement("span");
-        timeSpan.className = "step-timeline";
-        timeSpan.textContent = "Doorlooptijd: " + step.timeline;
-        metaDiv.appendChild(timeSpan);
-
-        var costBadge = document.createElement("span");
-        costBadge.className = "cost-badge cost-" + step.cost.toLowerCase();
-        costBadge.textContent = "Kosten: " + step.cost;
-        metaDiv.appendChild(costBadge);
-
-        stepDiv.appendChild(metaDiv);
-
-        var estimate = document.createElement("p");
-        estimate.className = "step-estimate";
-        estimate.textContent = "Geschatte score na deze stap: " + simAvg + " / 5";
-        stepDiv.appendChild(estimate);
-
-        container.appendChild(stepDiv);
-    }
+    var p3 = document.createElement("p");
+    p3.textContent = "Het gaat niet om de vraag of er op dit moment een concreet risico is, maar of uw organisatie kan verantwoorden dat er bewuste keuzes zijn gemaakt over de inzet van deze diensten.";
+    container.appendChild(p3);
 }
 
 /* --- Distribution bars --- */
@@ -939,7 +919,6 @@ function renderCountryBars(ipAnalyses) {
     if (!container) return;
     container.textContent = "";
 
-    // Group by country
     var countryCounts = {};
     var countryLevels = {};
     for (var i = 0; i < ipAnalyses.length; i++) {
@@ -954,7 +933,6 @@ function renderCountryBars(ipAnalyses) {
         if (lvl < countryLevels[cc]) countryLevels[cc] = lvl;
     }
 
-    // Sort by count descending
     var countries = Object.keys(countryCounts);
     countries.sort(function (a, b) { return countryCounts[b] - countryCounts[a]; });
 
@@ -1022,26 +1000,18 @@ function renderMap(ipAnalyses) {
     titleEl.textContent = "Wereldkaart met serverlocaties";
     svg.appendChild(titleEl);
 
-    // Background
     var bg = document.createElementNS(ns, "rect");
     bg.setAttribute("width", String(width));
     bg.setAttribute("height", String(height));
     bg.setAttribute("fill", "#1a2332");
     svg.appendChild(bg);
 
-    // Simplified continent outlines (equirectangular projection)
     var continentPaths = [
-        // Europe
         "M390,80 L395,75 410,72 420,68 435,70 440,75 445,80 450,88 445,95 440,100 430,105 420,108 410,110 400,108 392,102 388,95 Z",
-        // Africa
         "M395,115 L410,112 425,115 435,120 440,135 438,155 432,175 425,190 418,200 410,205 400,200 392,190 388,175 385,155 388,135 Z",
-        // Asia
         "M450,60 L470,55 490,52 510,55 530,58 550,55 570,60 585,65 595,72 600,82 605,95 600,105 590,110 575,115 560,118 545,120 530,118 515,112 500,108 490,100 480,95 470,88 460,82 455,75 Z",
-        // North America
         "M120,65 L140,58 160,55 180,58 200,62 220,68 240,75 255,82 260,92 258,105 250,118 238,130 225,140 210,148 195,152 180,148 168,140 155,130 142,118 135,105 128,92 122,80 Z",
-        // South America
         "M210,160 L225,155 238,158 248,168 252,180 250,195 245,210 238,225 228,238 218,248 208,252 198,248 190,238 185,225 182,210 185,195 190,180 198,168 Z",
-        // Australia
         "M560,195 L575,188 590,190 602,195 608,205 605,215 598,222 585,225 572,222 565,215 562,205 Z",
     ];
 
@@ -1054,7 +1024,6 @@ function renderMap(ipAnalyses) {
         svg.appendChild(path);
     }
 
-    // Grid lines
     var lon, lat, x, y, line;
     for (lon = -180; lon <= 180; lon += 60) {
         x = ((lon + 180) / 360) * width;
@@ -1079,13 +1048,11 @@ function renderMap(ipAnalyses) {
         svg.appendChild(line);
     }
 
-    // Sovereignty level colors
     var levelColors = {
         5: "#15803d", 4: "#22c55e", 3: "#eab308",
         2: "#f97316", 1: "#fb923c", 0: "#9ca3af",
     };
 
-    // Cluster IPs by rounded lat/lng
     var clusters = {};
     for (var ci = 0; ci < ipAnalyses.length; ci++) {
         var ipItem = ipAnalyses[ci];
@@ -1102,7 +1069,6 @@ function renderMap(ipAnalyses) {
         clusters[key].ips.push(ipItem);
     }
 
-    // Draw dots
     var clusterKeys = Object.keys(clusters);
     for (var di = 0; di < clusterKeys.length; di++) {
         var c = clusters[clusterKeys[di]];
@@ -1131,7 +1097,6 @@ function renderMap(ipAnalyses) {
 
         svg.appendChild(circle);
 
-        // Add country label next to large clusters
         if (c.count >= 2) {
             var labelEl = document.createElementNS(ns, "text");
             labelEl.setAttribute("x", String(cx + r + 3));
@@ -1167,6 +1132,8 @@ function renderServiceTable(orgMap, hostnameIps) {
     if (!container) return;
     container.textContent = "";
 
+    var orgHostnames = buildOrgHostnames(orgMap, hostnameIps);
+
     var table = document.createElement("table");
     table.className = "service-table";
 
@@ -1183,29 +1150,7 @@ function renderServiceTable(orgMap, hostnameIps) {
 
     var tbody = document.createElement("tbody");
 
-    // Reverse-map: find hostnames for each org
-    var orgHostnames = {};
-    var hostKeys = Object.keys(hostnameIps);
     var orgKeys = Object.keys(orgMap);
-
-    for (var oi = 0; oi < orgKeys.length; oi++) {
-        var orgKey = orgKeys[oi];
-        var org = orgMap[orgKey];
-        var matchedHostnames = [];
-
-        for (var hi = 0; hi < hostKeys.length; hi++) {
-            var hostname = hostKeys[hi];
-            var ips = hostnameIps[hostname];
-            for (var ii = 0; ii < ips.length; ii++) {
-                if (org.ips.indexOf(ips[ii]) !== -1 && matchedHostnames.indexOf(hostname) === -1) {
-                    matchedHostnames.push(hostname);
-                }
-            }
-        }
-        orgHostnames[orgKey] = matchedHostnames;
-    }
-
-    // Sort orgs by level ascending (worst first)
     orgKeys.sort(function (a, b) { return orgMap[a].level - orgMap[b].level; });
 
     for (var si = 0; si < orgKeys.length; si++) {
@@ -1215,7 +1160,6 @@ function renderServiceTable(orgMap, hostnameIps) {
         var row = document.createElement("tr");
         row.className = levelRowClass(sOrg.level);
 
-        // Dienst (hostnames)
         var tdService = document.createElement("td");
         var hostnames = orgHostnames[sOrgKey] || [];
         if (hostnames.length > 0) {
@@ -1225,17 +1169,14 @@ function renderServiceTable(orgMap, hostnameIps) {
         }
         row.appendChild(tdService);
 
-        // Aanbieder
         var tdOrg = document.createElement("td");
         tdOrg.textContent = sOrg.name;
         row.appendChild(tdOrg);
 
-        // Land
         var tdCountry = document.createElement("td");
         tdCountry.textContent = sOrg.country ? countryName(sOrg.country) : "-";
         row.appendChild(tdCountry);
 
-        // Niveau badge
         var tdLevel = document.createElement("td");
         var badge = document.createElement("span");
         badge.className = "badge badge-level-" + sOrg.level;

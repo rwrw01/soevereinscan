@@ -11,142 +11,146 @@
         <!-- Redirect notice (shown dynamically if applicable) -->
         <div id="redirect-notice" class="redirect-notice hidden"></div>
 
-        <!-- Executive summary (always visible) -->
-        <div class="executive-summary" id="executive-summary">
+        <!-- SECTION 1: Score -->
+        <div class="score-summary" id="score-summary">
             <div class="exec-header">
                 <div class="score-circle" id="score-circle">
                     <span class="score-value" id="score-value">--</span>
                     <span class="score-max">/ 5</span>
                 </div>
+                <div class="score-label-container">
+                    <span class="energy-label" id="energy-label">-</span>
+                </div>
                 <div class="exec-text">
                     <h2>Scanresultaten voor <span id="scan-url"></span></h2>
-                    <p id="exec-summary-text" class="exec-summary-text"></p>
+                    <p id="exec-summary-text"></p>
+                    <p id="exec-action-text" class="exec-action-text"></p>
                 </div>
             </div>
-            <div id="legal-context" class="legal-context"></div>
-            <div id="inform-yourself" class="inform-yourself"></div>
         </div>
 
-        <!-- Recommendations with cost table -->
-        <div class="recommendations-section" id="recommendations-section"></div>
+        <!-- SECTION 2: Services -->
+        <div class="report-card">
+            <h3>Wat gebruikt uw website?</h3>
+            <p class="section-desc">Overzicht van de diensten die geladen worden als iemand uw website bezoekt.</p>
+            <div id="services-container"></div>
+        </div>
 
-        <!-- Uw digitale leveranciers -->
-        <details class="report-section" open>
-            <summary><h3 class="layer-heading">Uw digitale leveranciers</h3></summary>
-            <p class="section-desc">Diensten die door de organisatie zijn gekozen en direct beinvloedbaar zijn.</p>
-            <div id="choices-container"></div>
-        </details>
-
-        <!-- Vragen voor uw organisatie -->
-        <details class="report-section" open>
-            <summary><h3 class="layer-heading">Vragen voor uw organisatie</h3></summary>
-            <p class="section-desc">Bespreek deze vragen met uw leverancier of interne IT-afdeling.</p>
-            <div id="questions-container"></div>
-        </details>
-
-        <!-- Verbeterpad -->
-        <details class="report-section" open>
-            <summary><h3 class="layer-heading">Verbeterpad naar niveau 4</h3></summary>
+        <!-- SECTION 3: Improvement -->
+        <div class="report-card">
+            <h3>Wat kunt u verbeteren?</h3>
             <div id="improvement-path"></div>
-        </details>
+        </div>
 
-        <!-- Visueel overzicht -->
-        <details class="report-section">
-            <summary><h3 class="layer-heading">Visueel overzicht</h3></summary>
+        <!-- SECTION 4: More info (collapsed) -->
+        <details class="report-card">
+            <summary><h3 class="section-toggle-heading">Meer informatie</h3></summary>
 
-            <div class="level-distribution-section">
-                <h4>Verdeling soevereiniteitsniveaus</h4>
-                <div id="level-distribution" class="level-distribution"></div>
-            </div>
+            <details class="sub-section">
+                <summary>Vragen voor uw informatieadviseur</summary>
+                <div id="questions-container"></div>
+            </details>
 
-            <div class="tree-section-inner">
-                <h4>Afhankelijkheidsboom</h4>
-                <p>Overzicht van alle diensten die worden geladen bij het bezoeken van deze website.</p>
-                <div id="resource-tree" class="resource-tree"></div>
-            </div>
-
-            <div class="map-section-inner">
-                <h4>Serverlocaties</h4>
-                <div id="country-bars" class="country-bars"></div>
-                <p class="map-sub">Geografische locaties van de servers die bij dit bezoek werden gecontacteerd.</p>
-                <div id="world-map" class="world-map"></div>
-            </div>
-        </details>
-
-        <!-- Technische details -->
-        <details class="report-section">
-            <summary><h3 class="layer-heading">Technische details</h3></summary>
-
-            <div class="level-explanation">
-                <h4>Wat betekent elk niveau?</h4>
-                <div class="level-list">
-                    <div class="level-item">
-                        <span class="level-dot level-dot-5"></span>
-                        <div>
-                            <strong>Niveau 5 — Volledig soeverein</strong>
-                            <p>EU-bedrijf met servers in de EU en netwerkeigenaar in de EU. Geen buitenlandse jurisdictie van toepassing.</p>
-                        </div>
-                    </div>
-                    <div class="level-item">
-                        <span class="level-dot level-dot-4"></span>
-                        <div>
-                            <strong>Niveau 4 — Grotendeels soeverein</strong>
-                            <p>EU-bedrijf met servers in de EU/EER/CH. Minimale externe afhankelijkheden.</p>
-                        </div>
-                    </div>
-                    <div class="level-item">
-                        <span class="level-dot level-dot-3"></span>
-                        <div>
-                            <strong>Niveau 3 — Gedeeltelijk soeverein</strong>
-                            <p>Servers in de EU, maar het moederbedrijf of de netwerkeigenaar is onbekend of buiten de EU.</p>
-                        </div>
-                    </div>
-                    <div class="level-item">
-                        <span class="level-dot level-dot-2"></span>
-                        <div>
-                            <strong>Niveau 2 — Beperkt soeverein</strong>
-                            <p>Niet-EU moederbedrijf, maar data wordt verwerkt in de EU.</p>
-                        </div>
-                    </div>
-                    <div class="level-item">
-                        <span class="level-dot level-dot-1"></span>
-                        <div>
-                            <strong>Niveau 1 — Minimaal soeverein</strong>
-                            <p>Niet-EU moederbedrijf met servers buiten de EU.</p>
-                        </div>
-                    </div>
-                    <div class="level-item">
-                        <span class="level-dot level-dot-0"></span>
-                        <div>
-                            <strong>Niveau 0 — Niet soeverein</strong>
-                            <p>Volledig onder buitenlandse jurisdictie, geen waarborgen vastgesteld.</p>
-                        </div>
-                    </div>
+            <details class="sub-section">
+                <summary>Visueel overzicht</summary>
+                <div class="level-distribution-section">
+                    <h4>Verdeling soevereiniteitsniveaus</h4>
+                    <div id="level-distribution" class="level-distribution"></div>
                 </div>
-                <p class="level-source">
-                    Indeling gebaseerd op het DICTU-toetsingsinstrument Digitale Soevereiniteit (januari 2026)
-                    en de Rijksvisie Digitale Soevereiniteit (december 2025).
-                </p>
-            </div>
 
-            <h4>Diensten per aanbieder</h4>
-            <div id="service-table-container"></div>
+                <div class="tree-section-inner">
+                    <h4>Afhankelijkheidsboom</h4>
+                    <p>Overzicht van alle diensten die worden geladen bij het bezoeken van deze website.</p>
+                    <div id="resource-tree" class="resource-tree"></div>
+                </div>
 
-            <details class="ip-details-toggle">
-                <summary>Toon IP-adressen en ASN-nummers</summary>
-                <table id="ip-table">
-                    <thead>
-                        <tr>
-                            <th>IP</th>
-                            <th>ASN</th>
-                            <th>Organisatie</th>
-                            <th>Land</th>
-                            <th>Moederbedrijf</th>
-                            <th>Niveau</th>
-                        </tr>
-                    </thead>
-                    <tbody id="ip-tbody"></tbody>
-                </table>
+                <div class="map-section-inner">
+                    <h4>Serverlocaties</h4>
+                    <div id="country-bars" class="country-bars"></div>
+                    <p class="map-sub">Geografische locaties van de servers die bij dit bezoek werden gecontacteerd.</p>
+                    <div id="world-map" class="world-map"></div>
+                </div>
+            </details>
+
+            <details class="sub-section">
+                <summary>Technische details</summary>
+
+                <div class="level-explanation">
+                    <h4>Wat betekent elk niveau?</h4>
+                    <div class="level-list">
+                        <div class="level-item">
+                            <span class="level-dot level-dot-5"></span>
+                            <div>
+                                <strong>Niveau 5 — Volledig soeverein</strong>
+                                <p>EU-bedrijf met servers in de EU en netwerkeigenaar in de EU. Geen buitenlandse jurisdictie van toepassing.</p>
+                            </div>
+                        </div>
+                        <div class="level-item">
+                            <span class="level-dot level-dot-4"></span>
+                            <div>
+                                <strong>Niveau 4 — Grotendeels soeverein</strong>
+                                <p>EU-bedrijf met servers in de EU/EER/CH. Minimale externe afhankelijkheden.</p>
+                            </div>
+                        </div>
+                        <div class="level-item">
+                            <span class="level-dot level-dot-3"></span>
+                            <div>
+                                <strong>Niveau 3 — Gedeeltelijk soeverein</strong>
+                                <p>Servers in de EU, maar het moederbedrijf of de netwerkeigenaar is onbekend of buiten de EU.</p>
+                            </div>
+                        </div>
+                        <div class="level-item">
+                            <span class="level-dot level-dot-2"></span>
+                            <div>
+                                <strong>Niveau 2 — Beperkt soeverein</strong>
+                                <p>Niet-EU moederbedrijf, maar data wordt verwerkt in de EU.</p>
+                            </div>
+                        </div>
+                        <div class="level-item">
+                            <span class="level-dot level-dot-1"></span>
+                            <div>
+                                <strong>Niveau 1 — Minimaal soeverein</strong>
+                                <p>Niet-EU moederbedrijf met servers buiten de EU.</p>
+                            </div>
+                        </div>
+                        <div class="level-item">
+                            <span class="level-dot level-dot-0"></span>
+                            <div>
+                                <strong>Niveau 0 — Niet soeverein</strong>
+                                <p>Volledig onder buitenlandse jurisdictie, geen waarborgen vastgesteld.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="level-source">
+                        Indeling gebaseerd op het DICTU-toetsingsinstrument Digitale Soevereiniteit (januari 2026)
+                        en de Rijksvisie Digitale Soevereiniteit (december 2025).
+                    </p>
+                </div>
+
+                <h4>Diensten per aanbieder</h4>
+                <div id="service-table-container"></div>
+
+                <details class="ip-details-toggle">
+                    <summary>Toon IP-adressen en ASN-nummers</summary>
+                    <table id="ip-table">
+                        <thead>
+                            <tr>
+                                <th>IP</th>
+                                <th>ASN</th>
+                                <th>Organisatie</th>
+                                <th>Land</th>
+                                <th>Moederbedrijf</th>
+                                <th>Niveau</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ip-tbody"></tbody>
+                    </table>
+                </details>
+            </details>
+
+            <details class="sub-section">
+                <summary>Juridische achtergrond</summary>
+                <div id="legal-context"></div>
             </details>
         </details>
 
