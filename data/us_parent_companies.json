@@ -40,5 +40,20 @@
     "Datacamp Limited": {"parent": "Datacamp", "country": "GB"},
     "Amazon": {"parent": "Amazon", "country": "US"},
     "Google": {"parent": "Google/Alphabet", "country": "US"},
-    "Microsoft": {"parent": "Microsoft", "country": "US"}
+    "Microsoft": {"parent": "Microsoft", "country": "US"},
+    "Prolocation B.V.": {"parent": "Prolocation", "country": "NL"},
+    "Prolocation": {"parent": "Prolocation", "country": "NL"},
+    "KPN B.V.": {"parent": "KPN", "country": "NL"},
+    "KPN": {"parent": "KPN", "country": "NL"},
+    "Ziggo B.V.": {"parent": "Liberty Global", "country": "NL"},
+    "T-Mobile Netherlands B.V.": {"parent": "T-Mobile NL", "country": "NL"},
+    "Signet B.V.": {"parent": "TransIP/team.blue", "country": "NL"},
+    "i3D.net B.V.": {"parent": "Ubisoft", "country": "FR"},
+    "LeaseWeb Netherlands B.V.": {"parent": "Leaseweb", "country": "NL"},
+    "Intermax Hosting B.V.": {"parent": "Intermax", "country": "NL"},
+    "PCextreme B.V.": {"parent": "PCextreme", "country": "NL"},
+    "Previder B.V.": {"parent": "Previder", "country": "NL"},
+    "MSF-OCB": {"parent": "MSF", "country": "BE"},
+    "Gcore": {"parent": "Gcore", "country": "LU"},
+    "Gcore Luxembourg S.A.": {"parent": "Gcore", "country": "LU"}
 }
