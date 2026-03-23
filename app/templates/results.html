@@ -154,6 +154,17 @@
             </details>
         </details>
 
+        <!-- Email PDF section -->
+        <div class="report-card email-section" id="email-section">
+            <h3>Rapport per email ontvangen</h3>
+            <p class="section-desc">Ontvang dit rapport als PDF per email. Uw emailadres wordt niet opgeslagen.</p>
+            <form id="email-form" class="email-form">
+                <input type="email" id="email-input" placeholder="uw@emailadres.nl" required>
+                <button type="submit" id="email-btn">Verstuur PDF</button>
+            </form>
+            <p id="email-status" class="hidden"></p>
+        </div>
+
     </div>
 </section>
 {% endblock %}

@@ -382,6 +382,22 @@ th {
 }
 .map-dot:hover { filter: brightness(1.3); }
 
+/* --- Email section --- */
+.email-form {
+    display: flex; gap: 0.5rem; margin-top: 0.75rem;
+}
+.email-form input[type="email"] {
+    flex: 1; padding: 0.6rem 0.8rem; border: 2px solid #e5e7eb;
+    border-radius: 8px; font-size: 0.95rem;
+}
+.email-form input[type="email"]:focus { border-color: #1a1a2e; outline: none; }
+.email-form button {
+    padding: 0.6rem 1.2rem; background: #16213e; color: #fff;
+    border: none; border-radius: 8px; font-weight: 600; cursor: pointer;
+}
+.email-form button:disabled { background: #999; cursor: wait; }
+#email-status { margin-top: 0.5rem; font-size: 0.9rem; }
+
 /* --- Responsive --- */
 @media (max-width: 600px) {
     .scan-form form { flex-direction: column; }

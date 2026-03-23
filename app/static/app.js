@@ -52,8 +52,16 @@ function loadResults(scanId) {
     function poll() {
         pollCount++;
         fetch(BASE + "/api/scan/" + scanId)
-            .then(function (res) { return res.json(); })
+            .then(function (res) {
+                if (res.status === 404) {
+                    statusMsg.textContent = "Scan niet gevonden. Mogelijk is deze verlopen.";
+                    loading.querySelector(".spinner").style.display = "none";
+                    return null;
+                }
+                return res.json();
+            })
             .then(function (data) {
+                if (!data) return;
                 if (data.status === "done") {
                     loading.classList.add("hidden");
                     results.classList.remove("hidden");
@@ -62,6 +70,11 @@ function loadResults(scanId) {
                     statusMsg.textContent = "Scan is mislukt. Probeer het opnieuw.";
                     loading.querySelector(".spinner").style.display = "none";
                 } else {
+                    if (pollCount > 40) {
+                        statusMsg.textContent = "De scan duurt langer dan verwacht. Vernieuw de pagina om het opnieuw te proberen.";
+                        loading.querySelector(".spinner").style.display = "none";
+                        return;
+                    }
                     var msg = statusLabels[data.status] || "Bezig...";
                     var elapsed = pollCount * 3;
                     statusMsg.textContent = msg + " (" + elapsed + "s)";
@@ -1219,6 +1232,56 @@ function renderIpTable(ipList) {
         tbody.appendChild(row);
     }
 }
+
+// Email form handler
+(function () {
+    document.addEventListener("DOMContentLoaded", function () {
+        var emailForm = document.getElementById("email-form");
+        if (!emailForm) return;
+
+        emailForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            var emailInput = document.getElementById("email-input");
+            var emailBtn = document.getElementById("email-btn");
+            var emailStatus = document.getElementById("email-status");
+            var script = document.querySelector("script[data-scan-id]");
+            var scanId = script ? script.dataset.scanId : null;
+
+            if (!scanId || !emailInput.value) return;
+
+            emailBtn.disabled = true;
+            emailBtn.textContent = "Bezig met verzenden...";
+            emailStatus.classList.add("hidden");
+
+            fetch(BASE + "/api/scan/" + scanId + "/email", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: emailInput.value }),
+            })
+                .then(function (res) {
+                    return res.json().then(function (data) {
+                        emailStatus.classList.remove("hidden");
+                        if (res.ok) {
+                            emailStatus.textContent = "Het rapport wordt per email verzonden naar " + emailInput.value + ".";
+                            emailStatus.style.color = "#15803d";
+                        } else {
+                            emailStatus.textContent = "Fout: " + (data.detail || "Kon email niet versturen.");
+                            emailStatus.style.color = "#dc2626";
+                            emailBtn.disabled = false;
+                            emailBtn.textContent = "Verstuur PDF";
+                        }
+                    });
+                })
+                .catch(function () {
+                    emailStatus.classList.remove("hidden");
+                    emailStatus.textContent = "Verbindingsfout. Probeer het opnieuw.";
+                    emailStatus.style.color = "#dc2626";
+                    emailBtn.disabled = false;
+                    emailBtn.textContent = "Verstuur PDF";
+                });
+        });
+    });
+})();
 
 // Auto-load results if scan-id is present on the script tag
 (function () {
