@@ -227,7 +227,9 @@ td { padding: 6pt 8pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; vertica
 <h2>Uw digitale leveranciers</h2>
 <p>Overzicht van de diensten die geladen worden als iemand uw website bezoekt.</p>
 
-{% if services %}
+{% if services_by_category %}
+{% for cat in services_by_category %}
+<h3 style="color: #1e3a5f; margin: 1em 0 0.3em; font-size: 11pt;">{{ cat.label }}</h3>
 <table>
     <thead>
         <tr>
@@ -239,10 +241,10 @@ td { padding: 6pt 8pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; vertica
         </tr>
     </thead>
     <tbody>
-        {% for svc in services %}
+        {% for svc in cat.services %}
         <tr>
-            <td><strong>{{ svc.name }}</strong></td>
-            <td>{{ svc.country_name }}</td>
+            <td><strong>{{ svc.name }}</strong>{% if svc.role %}<br><em style="font-size: 8pt; color: #666;">{{ svc.role }}</em>{% endif %}</td>
+            <td>{{ svc.country_display }}</td>
             <td><span class="badge badge-{{ svc.level }}">{{ svc.level }} — {{ svc.label }}</span></td>
             <td style="font-size: 8pt; word-break: break-all;">{{ svc.hostnames|join(", ") }}</td>
             <td>
@@ -253,6 +255,7 @@ td { padding: 6pt 8pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; vertica
         {% endfor %}
     </tbody>
 </table>
+{% endfor %}
 {% else %}
 <p><em>Geen diensten gedetecteerd.</em></p>
 {% endif %}

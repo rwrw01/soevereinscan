@@ -24,6 +24,35 @@ ALTERNATIVES = {
     "adobe": "Tip: lettertypen zelf hosten op uw eigen server",
 }
 
+SERVICE_ROLES = {
+    "cloudflare": "Beveiligt en versnelt het laden van uw website",
+    "akamai": "Beveiligt en versnelt het laden van uw website",
+    "fastly": "Versnelt het laden van uw website",
+    "cloudfront": "Versnelt het laden van uw website",
+    "google": "Bezoekersstatistieken en analyse",
+    "amazon": "Hosting van (delen van) uw website",
+    "aws": "Hosting van (delen van) uw website",
+    "microsoft": "Hosting of online diensten",
+    "azure": "Hosting van (delen van) uw website",
+    "adobe": "Levert lettertypen voor uw website",
+    "typekit": "Levert lettertypen voor uw website",
+    "facebook": "Volgt bezoekers voor advertenties",
+    "pinterest": "Volgt bezoekers voor advertenties",
+    "doubleclick": "Advertentietracking",
+    "hotjar": "Analyseert bezoekersgedrag op uw website",
+    "hetzner": "Hosting van (delen van) uw website",
+    "ovh": "Hosting van (delen van) uw website",
+    "scaleway": "Hosting van (delen van) uw website",
+    "transip": "Hosting van (delen van) uw website",
+    "leaseweb": "Hosting van (delen van) uw website",
+}
+
+US_PARENT_COMPANIES = {
+    "amazon", "aws", "google", "microsoft", "azure", "meta", "facebook",
+    "apple", "cloudflare", "akamai", "fastly", "adobe", "oracle",
+    "ibm", "salesforce", "pinterest", "doubleclick", "hotjar",
+}
+
 COUNTRY_NAMES = {
     "NL": "Nederland", "DE": "Duitsland", "US": "Verenigde Staten",
     "IE": "Ierland", "FR": "Frankrijk", "GB": "Verenigd Koninkrijk",
@@ -119,8 +148,25 @@ def _build_template_data(scan: Scan) -> dict:
     )
     scan_base = ".".join(scan_domain.split(".")[-2:])
 
-    # Build services list with alternatives
+    # Import category classifier from scanner
+    from app.services.scanner import _classify_org_category
+
+    # Category definitions (mirrors JS SERVICE_CATEGORIES)
+    pdf_categories = {
+        "hosting":  {"label": "Hosting & infrastructuur",       "weight": 5},
+        "cdn":      {"label": "Beveiliging & versnelling (CDN)", "weight": 3},
+        "analytics":{"label": "Bezoekersstatistieken",          "weight": 1},
+        "tracking": {"label": "Tracking & advertenties",        "weight": 1},
+        "fonts":    {"label": "Lettertypen & hulpbestanden",    "weight": 0.5},
+        "email":    {"label": "E-mail",                          "weight": 1},
+        "other":    {"label": "Overige diensten",                "weight": 2},
+    }
+    category_order = ["hosting", "cdn", "analytics", "tracking", "fonts", "email", "other"]
+
+    # Build services list with categories and alternatives
     services = []
+    weighted_sum = 0.0
+    weight_total = 0.0
     for key, org in sorted(org_map.items(), key=lambda x: x[1]["level"]):
         alt = None
         for kw, text in ALTERNATIVES.items():
@@ -131,9 +177,44 @@ def _build_template_data(scan: Scan) -> dict:
             ".".join(h.split(".")[-2:]) != scan_base
             for h in org["hostnames"]
         )
+
+        # Category classification
+        cat_key = _classify_org_category(key, org["hostnames"], scan.url)
+        cat_def = pdf_categories.get(cat_key, pdf_categories["other"])
+        weight = cat_def["weight"]
+        weighted_sum += weight * org["level"]
+        weight_total += weight
+
+        # Service role from category
+        role = None
+        hostnames_lower = " ".join(org["hostnames"]).lower()
+        if any(kw in hostnames_lower for kw in ("fonts", "typekit")):
+            role = "Levert lettertypen voor uw website"
+        elif any(kw in hostnames_lower for kw in ("analytics", "gtag", "googletagmanager")):
+            role = "Bezoekersstatistieken en analyse"
+        elif any(kw in hostnames_lower for kw in ("pixel", "track", "adserv")):
+            role = "Volgt bezoekers voor advertenties"
+        elif any(kw in hostnames_lower for kw in ("cdn", "static", "assets", "cache")):
+            role = "Versnelt het laden van uw website"
+        else:
+            for kw, text in SERVICE_ROLES.items():
+                if kw in key:
+                    role = text
+                    break
+
+        # Parent company country note
+        is_us_parent = any(c in key for c in US_PARENT_COMPANIES)
+        country_display = org["country_name"]
+        if is_us_parent and org.get("country") != "US":
+            country_display += " (Amerikaans moederbedrijf)"
+
         services.append({
             **org,
             "alternative": alt,
+            "role": role or "",
+            "country_display": country_display,
+            "category": cat_key,
+            "category_label": cat_def["label"],
             "action": (
                 "U kunt dit wijzigen"
                 if is_third_party and org["level"] < 4
@@ -141,15 +222,28 @@ def _build_template_data(scan: Scan) -> dict:
             ),
         })
 
+    # Group services by category for template
+    services_by_category = []
+    for cat_key in category_order:
+        cat_services = [s for s in services if s.get("category") == cat_key]
+        if cat_services:
+            cat_services.sort(key=lambda s: s["level"])
+            services_by_category.append({
+                "label": pdf_categories[cat_key]["label"],
+                "services": cat_services,
+            })
+
     # Counts
     total_orgs = len(org_map)
     eu_count = sum(1 for o in org_map.values() if o["level"] >= 4)
     non_eu_count = sum(1 for o in org_map.values() if o["level"] <= 2)
 
-    # Average level
-    avg = summary.get("average_level", 0)
+    # Weighted average level (use backend value if available, else compute)
+    avg = summary.get("weighted_average_level") or (
+        round(weighted_sum / weight_total, 1) if weight_total > 0 else 0
+    )
 
-    # Energy label
+    # Energy label (based on weighted average)
     if avg >= 4.5:
         label = "A"
     elif avg >= 4.0:
@@ -215,6 +309,7 @@ def _build_template_data(scan: Scan) -> dict:
         "non_eu_count": non_eu_count,
         "recommendations": recs,
         "services": services,
+        "services_by_category": services_by_category,
         "improvement_steps": steps,
         "questions": questions,
         "distribution": dist,

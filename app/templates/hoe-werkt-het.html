@@ -3,6 +3,10 @@
 {% block content %}
 <section class="intro">
 
+    <p style="margin-bottom: 2rem;">
+        <a href="{{ base }}/">&#8592; Terug naar de scan</a>
+    </p>
+
     <h2>Hoe werkt de scan?</h2>
     <p>
         SoevereinScan simuleert een echt websitebezoek met een volledige Chromium-browser.
@@ -70,14 +74,14 @@
                 <span class="level-dot level-dot-5"></span>
                 <div>
                     <strong>Niveau 5 (label A) — Volledig soeverein</strong>
-                    <p>EU-bedrijf, servers in de EU, netwerkeigenaar in de EU. Geen buitenlandse jurisdictie van toepassing.</p>
+                    <p>EU-bedrijf, servers in de EU én de netwerkeigenaar is bevestigd als EU-organisatie via PeeringDB. Alle drie de lagen zijn Europees.</p>
                 </div>
             </div>
             <div class="level-item">
                 <span class="level-dot level-dot-4"></span>
                 <div>
                     <strong>Niveau 4 (label B) — Grotendeels soeverein</strong>
-                    <p>EU-bedrijf met servers in de EU, EER of Zwitserland. Minimale externe afhankelijkheden.</p>
+                    <p>EU-bedrijf met servers in de EU, maar de netwerkeigenaar is onbekend of niet apart bevestigd. Of: geen bekend moederbedrijf, maar PeeringDB bevestigt een EU-organisatie.</p>
                 </div>
             </div>
             <div class="level-item">
@@ -116,6 +120,70 @@
         "fout" — het betekent dat er diensten worden gebruikt van niet-Europese partijen.
         De keuze om een niet-Europees bedrijf te gebruiken kan bewust en weloverwogen zijn.
         Het gaat erom dat u weet welke keuzes er zijn gemaakt en welke alternatieven er bestaan.
+    </p>
+
+    <h2>Hoe wordt de totaalscore berekend?</h2>
+    <p>
+        Niet elke dienst heeft dezelfde impact op uw digitale soevereiniteit. De server
+        waarop uw website draait verwerkt al het verkeer van uw bezoekers — dat weegt
+        zwaarder dan een klein tracking-script dat beperkte gegevens verstuurt.
+    </p>
+    <p>
+        Daarom gebruiken we een <strong>gewogen score</strong>. Elke dienst wordt
+        ingedeeld in een categorie, en die categorie bepaalt hoeveel invloed de dienst
+        heeft op de totaalscore:
+    </p>
+
+    <div class="level-explanation">
+        <div class="level-list">
+            <div class="level-item">
+                <span class="level-dot level-dot-5"></span>
+                <div>
+                    <strong>Hosting & infrastructuur — hoogste impact</strong>
+                    <p>De servers waarop uw website draait. Hier gaat al het verkeer van uw bezoekers doorheen. Dit telt het zwaarst mee.</p>
+                </div>
+            </div>
+            <div class="level-item">
+                <span class="level-dot level-dot-4"></span>
+                <div>
+                    <strong>Beveiliging & versnelling (CDN) — hoge impact</strong>
+                    <p>Diensten die uw website beschermen en versnellen, zoals Cloudflare. Deze zien al het verkeer als tussenstation.</p>
+                </div>
+            </div>
+            <div class="level-item">
+                <span class="level-dot level-dot-3"></span>
+                <div>
+                    <strong>Overige externe diensten — gemiddelde impact</strong>
+                    <p>Diensten die niet in een andere categorie vallen maar wel data van uw bezoekers ontvangen.</p>
+                </div>
+            </div>
+            <div class="level-item">
+                <span class="level-dot level-dot-2"></span>
+                <div>
+                    <strong>Bezoekersstatistieken & tracking — beperkte impact</strong>
+                    <p>Analytics en tracking scripts (zoals Google Analytics) versturen beperkte gegevens: paginabezoeken, klikgedrag. Dit weegt minder zwaar dan hosting.</p>
+                </div>
+            </div>
+            <div class="level-item">
+                <span class="level-dot level-dot-1"></span>
+                <div>
+                    <strong>Lettertypen & hulpbestanden — minimale impact</strong>
+                    <p>Lettertypen en kleine bestanden die worden opgehaald. Hierbij gaat minimale data naar de aanbieder (alleen welke pagina het lettertype laadt).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p>
+        <strong>Voorbeeld:</strong> een website die op een Nederlandse server draait (niveau 5)
+        maar Google Analytics gebruikt (niveau 1) scoort veel beter dan een website die
+        bij Amazon draait (niveau 2) maar geen tracking heeft. De hosting bepaalt het
+        merendeel van de score, omdat daar de meeste data doorheen gaat.
+    </p>
+    <p>
+        Dit betekent niet dat analytics onbelangrijk is — het blijft zichtbaar als
+        bevinding in het rapport, met bijbehorende alternatieven. Maar het trekt de
+        totaalscore niet meer onevenredig omlaag.
     </p>
 
     <h2>Hoe om te gaan met soevereiniteit?</h2>
@@ -189,7 +257,7 @@
     </p>
 
     <p style="margin-top: 2rem; text-align: center;">
-        <a href="{{ base }}/">Terug naar de scan</a>
+        <a href="{{ base }}/" class="btn-primary">Start een scan</a>
     </p>
 
 </section>

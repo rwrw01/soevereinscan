@@ -5,6 +5,14 @@
     <div id="loading">
         <div class="spinner"></div>
         <p>Resultaten worden geladen...</p>
+        <div id="loading-email" class="loading-email hidden">
+            <p>Duurt het te lang? Laat uw emailadres achter en ontvang het rapport zodra het klaar is.</p>
+            <form id="loading-email-form" class="email-form">
+                <input type="email" id="loading-email-input" placeholder="uw@emailadres.nl" required>
+                <button type="submit">Verstuur als klaar</button>
+            </form>
+            <p id="loading-email-status" class="hidden"></p>
+        </div>
     </div>
     <div id="results" class="hidden">
 
@@ -42,34 +50,35 @@
             <div id="improvement-path"></div>
         </div>
 
-        <!-- SECTION 4: More info (collapsed) -->
+        <!-- SECTION 4: Visual overview (always visible) -->
+        <div class="report-card">
+            <h3>Visueel overzicht</h3>
+            <div class="level-distribution-section">
+                <h4>Verdeling soevereiniteitsniveaus</h4>
+                <div id="level-distribution" class="level-distribution"></div>
+            </div>
+
+            <div class="tree-section-inner">
+                <h4>Afhankelijkheidsboom</h4>
+                <p>Overzicht van alle diensten die worden geladen bij het bezoeken van deze website.</p>
+                <div id="resource-tree" class="resource-tree"></div>
+            </div>
+
+            <div class="map-section-inner">
+                <h4>Serverlocaties</h4>
+                <div id="country-bars" class="country-bars"></div>
+                <p class="map-sub">Geografische locaties van de servers die bij dit bezoek werden gecontacteerd.</p>
+                <div id="world-map" class="world-map"></div>
+            </div>
+        </div>
+
+        <!-- SECTION 5: More info (collapsed) -->
         <details class="report-card">
             <summary><h3 class="section-toggle-heading">Meer informatie</h3></summary>
 
             <details class="sub-section">
                 <summary>Vragen voor uw informatieadviseur</summary>
                 <div id="questions-container"></div>
-            </details>
-
-            <details class="sub-section">
-                <summary>Visueel overzicht</summary>
-                <div class="level-distribution-section">
-                    <h4>Verdeling soevereiniteitsniveaus</h4>
-                    <div id="level-distribution" class="level-distribution"></div>
-                </div>
-
-                <div class="tree-section-inner">
-                    <h4>Afhankelijkheidsboom</h4>
-                    <p>Overzicht van alle diensten die worden geladen bij het bezoeken van deze website.</p>
-                    <div id="resource-tree" class="resource-tree"></div>
-                </div>
-
-                <div class="map-section-inner">
-                    <h4>Serverlocaties</h4>
-                    <div id="country-bars" class="country-bars"></div>
-                    <p class="map-sub">Geografische locaties van de servers die bij dit bezoek werden gecontacteerd.</p>
-                    <div id="world-map" class="world-map"></div>
-                </div>
             </details>
 
             <details class="sub-section">

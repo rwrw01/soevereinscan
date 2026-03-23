@@ -16,6 +16,113 @@ from app.services.ripestat import RipeStatService
 
 logger = logging.getLogger(__name__)
 
+# Category weights for impact-weighted scoring
+_CATEGORY_WEIGHTS = {
+    "hosting": 5,
+    "cdn": 3,
+    "analytics": 1,
+    "tracking": 1,
+    "fonts": 0.5,
+    "email": 1,
+    "other": 2,
+}
+
+_HOSTNAME_PATTERNS: list[tuple[str, str]] = [
+    (r"fonts\.|typekit|fontawesome", "fonts"),
+    (r"analytics\.|gtag|googletagmanager|stats\.|matomo|piwik", "analytics"),
+    (r"pixel\.|track\.|adserv|doubleclick|adsystem", "tracking"),
+    (r"cdn\.|static\.|assets\.|cache\.|\.akamaized\.net|\.cloudfront\.net|\.fastly\.net", "cdn"),
+    (r"mail\.|smtp\.|mx\.|outlook\.", "email"),
+]
+
+_ORG_PATTERNS: list[tuple[str, str]] = [
+    (r"cloudflare|akamai|fastly|cloudfront|bunny|incapsula|stackpath|keycdn|cdn77", "cdn"),
+    (r"facebook|pinterest|doubleclick|hotjar|hubspot|linkedin|twitter|tiktok", "tracking"),
+    (r"adobe|typekit", "fonts"),
+    (r"amazon|aws|azure|microsoft|hetzner|ovh|scaleway|transip|strato|leaseweb|digitalocean|linode|vultr", "hosting"),
+]
+
+
+def _classify_org_category(org_key: str, hostnames: list[str], scan_url: str) -> str:
+    """Classify an organisation into an impact category."""
+    import re
+    from urllib.parse import urlparse
+
+    joined = " ".join(hostnames).lower()
+
+    # Priority 1: hostname patterns
+    for pattern, cat in _HOSTNAME_PATTERNS:
+        if re.search(pattern, joined):
+            return cat
+
+    # Priority 2: org keywords
+    for pattern, cat in _ORG_PATTERNS:
+        if re.search(pattern, org_key):
+            # Google special case
+            if "google" in org_key:
+                if re.search(r"fonts", joined):
+                    return "fonts"
+                if re.search(r"cloud|compute|storage", joined):
+                    return "hosting"
+                return "analytics"
+            return cat
+    if "google" in org_key:
+        if re.search(r"fonts", joined):
+            return "fonts"
+        return "analytics"
+
+    # Priority 3: fallback — first-party = hosting, else other
+    scan_domain = urlparse(scan_url).netloc
+    scan_base = ".".join(scan_domain.split(".")[-2:])
+    for h in hostnames:
+        h_base = ".".join(h.split(".")[-2:])
+        if h_base == scan_base:
+            return "hosting"
+
+    return "other"
+
+
+def _compute_weighted_average(
+    ip_results: list[dict],
+    hostname_ips: dict[str, list[str]],
+    scan_url: str,
+) -> float:
+    """Compute impact-weighted sovereignty score.
+
+    Groups IPs by organisation, classifies each org into a category,
+    and returns a weighted average where hosting counts more than tracking.
+    """
+    # Build org map: org_key -> { level (worst), ips }
+    org_map: dict[str, dict] = {}
+    for r in ip_results:
+        key = r["org"]
+        if key not in org_map:
+            org_map[key] = {"level": r["level"], "ips": set()}
+        org_map[key]["ips"].add(r["ip"])
+        if r["level"] < org_map[key]["level"]:
+            org_map[key]["level"] = r["level"]
+
+    # Build org -> hostnames from hostname_ips
+    org_hostnames: dict[str, list[str]] = {k: [] for k in org_map}
+    for hostname, ips in hostname_ips.items():
+        for org_key, org in org_map.items():
+            if any(ip in org["ips"] for ip in ips):
+                if hostname not in org_hostnames[org_key]:
+                    org_hostnames[org_key].append(hostname)
+
+    # Classify and weight
+    weighted_sum = 0.0
+    weight_total = 0.0
+    for org_key, org in org_map.items():
+        cat = _classify_org_category(org_key, org_hostnames.get(org_key, []), scan_url)
+        weight = _CATEGORY_WEIGHTS.get(cat, 2)
+        weighted_sum += weight * org["level"]
+        weight_total += weight
+
+    if weight_total == 0:
+        return 0.0
+    return round(weighted_sum / weight_total, 1)
+
 
 class ScanOrchestrator:
     def __init__(
@@ -77,6 +184,7 @@ class ScanOrchestrator:
             # Phase 3: Analyze each unique IP
             level_counter: Counter[int] = Counter()
             level_sum = 0
+            ip_results: list[dict] = []  # Collect for weighted scoring
 
             for ip in capture_result.all_ips:
                 geoip_result = self._geoip.lookup(ip) if self._geoip else None
@@ -140,6 +248,11 @@ class ScanOrchestrator:
 
                 level_counter[jurisdiction.level] += 1
                 level_sum += jurisdiction.level
+                ip_results.append({
+                    "ip": ip,
+                    "org": (parent or geoip_result.asn_org or ip).lower(),
+                    "level": jurisdiction.level,
+                })
 
             # Phase 4: Summary — mark as error if no IPs found
             total = sum(level_counter.values())
@@ -151,6 +264,11 @@ class ScanOrchestrator:
             level_distribution = {str(k): level_counter.get(k, 0) for k in range(6)}
             average_level = round(level_sum / total, 1) if total > 0 else 0
 
+            # Weighted average: group by org, classify by impact category
+            weighted_average_level = _compute_weighted_average(
+                ip_results, capture_result.hostname_ips, scan.url,
+            )
+
             final_url = (
                 capture_result.redirects[-1]
                 if capture_result.redirects
@@ -159,6 +277,7 @@ class ScanOrchestrator:
             scan.summary = {
                 "total_ips": total,
                 "average_level": average_level,
+                "weighted_average_level": weighted_average_level,
                 "level_distribution": level_distribution,
                 "total_hostnames": len(capture_result.hostname_ips),
                 "third_party_hostnames": len(capture_result.third_party_domains),
