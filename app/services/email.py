@@ -1,9 +1,11 @@
 import logging
+import os
 import smtplib
 import ssl
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +13,14 @@ SMTP_HOST = "mail.publicvibes.nl"
 SMTP_PORT = 465  # SMTPS
 FROM_EMAIL = "info@publicvibes.nl"
 FROM_NAME = "SoevereinScan"
+
+
+def _read_secret(secret_name: str, env_name: str) -> str:
+    """Read a secret from Docker secrets file or environment variable."""
+    secret_path = Path(f"/run/secrets/{secret_name}")
+    if secret_path.exists():
+        return secret_path.read_text().strip()
+    return os.environ.get(env_name, "")
 
 
 async def send_report(email: str, pdf_bytes: bytes, scan_url: str) -> None:
@@ -44,8 +54,13 @@ async def send_report(email: str, pdf_bytes: bytes, scan_url: str) -> None:
     msg.attach(attachment)
 
     try:
+        smtp_user = _read_secret("smtp_username", "SMTP_USERNAME")
+        smtp_pass = _read_secret("smtp_password", "SMTP_PASSWORD")
+
         context = ssl.create_default_context()
         with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
+            if smtp_user and smtp_pass:
+                server.login(smtp_user, smtp_pass)
             server.send_message(msg)
         logger.info(
             "Report email sent to %s for %s", email[:3] + "***", scan_url

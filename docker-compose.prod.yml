@@ -34,6 +34,8 @@ services:
     secrets:
       - ripe_atlas_api_key
       - maxmind_license_key
+      - smtp_username
+      - smtp_password
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -175,3 +177,7 @@ secrets:
     file: ./secrets/ripe_atlas_api_key
   maxmind_license_key:
     file: ./secrets/maxmind_license_key
+  smtp_username:
+    file: ./secrets/smtp_username
+  smtp_password:
+    file: ./secrets/smtp_password
