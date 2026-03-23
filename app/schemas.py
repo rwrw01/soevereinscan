@@ -18,13 +18,20 @@ class ScanRequest(BaseModel):
         import ipaddress
         import socket
         hostname = str(v).split("//")[1].split("/")[0].split(":")[0]
+
+        # Must have a TLD (at least one dot)
+        if "." not in hostname:
+            raise ValueError(f"Ongeldige URL: {hostname} heeft geen domeinextensie (bijv. .nl)")
+
+        # Must resolve in DNS
         try:
             ip = ipaddress.ip_address(socket.gethostbyname(hostname))
             for network in BLOCKED_NETWORKS:
                 if ip in ipaddress.ip_network(network):
                     raise ValueError(f"Interne/gereserveerde adressen zijn niet toegestaan: {hostname}")
         except socket.gaierror:
-            pass
+            raise ValueError(f"Domein {hostname} bestaat niet of kan niet worden gevonden")
+
         return v
 
 

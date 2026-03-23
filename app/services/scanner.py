@@ -141,8 +141,13 @@ class ScanOrchestrator:
                 level_counter[jurisdiction.level] += 1
                 level_sum += jurisdiction.level
 
-            # Phase 4: Summary
+            # Phase 4: Summary — mark as error if no IPs found
             total = sum(level_counter.values())
+            if total == 0:
+                logger.warning("No IPs found for %s — marking as error", scan.url)
+                scan.status = "error"
+                await session.commit()
+                return
             level_distribution = {str(k): level_counter.get(k, 0) for k in range(6)}
             average_level = round(level_sum / total, 1) if total > 0 else 0
 

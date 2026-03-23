@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}Hoe werkt het — SoevereinScan{% endblock %}
+{% block content %}
+<section class="intro">
+
+    <h2>Hoe werkt de scan?</h2>
+    <p>
+        SoevereinScan simuleert een echt websitebezoek met een volledige Chromium-browser.
+        De browser opent uw website precies zoals een bezoeker dat zou doen: pagina laden,
+        stylesheets ophalen, scripts uitvoeren, afbeeldingen tonen.
+    </p>
+    <p>
+        Tijdens dat bezoek registreren we alle verbindingen die de browser maakt. Welke
+        servers worden gecontacteerd? Welke externe diensten worden geladen? Welke domeinen
+        zijn betrokken? Zo ontstaat een compleet beeld van de digitale afhankelijkheden
+        van uw website.
+    </p>
+    <p>
+        We gebruiken anti-detectietechnologie zodat websites normaal reageren — niet anders
+        dan bij een echt bezoek. Cookie-consentbanners worden automatisch geaccepteerd,
+        zodat we het volledige beeld krijgen van alle diensten die na toestemming worden geladen.
+    </p>
+
+    <h2>Welke bronnen gebruiken we?</h2>
+    <p>
+        Om te bepalen bij welke organisatie en in welk land een server hoort, combineren
+        we meerdere openbare bronnen:
+    </p>
+
+    <h3>MaxMind GeoLite2</h3>
+    <p>
+        Een database die bij elk IP-adres het land en de netwerkorganisatie opzoekt. Deze
+        database draait lokaal op onze server — er wordt geen data naar externe partijen gestuurd.
+    </p>
+
+    <h3>PeeringDB</h3>
+    <p>
+        Een openbare database van netwerkorganisaties. We zoeken hiermee op welk bedrijf
+        een netwerk beheert en in welk land dat bedrijf is gevestigd. PeeringDB wordt
+        wereldwijd gebruikt door netwerkbeheerders en is een betrouwbare bron voor
+        organisatiegegevens.
+    </p>
+
+    <h3>RIPEstat (RIPE NCC)</h3>
+    <p>
+        De Europese Internet Registry beheert gegevens over IP-adressen en netwerken in
+        Europa, het Midden-Oosten en delen van Centraal-Azie. We gebruiken RIPEstat als
+        aanvulling wanneer PeeringDB onvoldoende informatie geeft over het registratieland
+        van een netwerk.
+    </p>
+
+    <h3>Handmatige correctielijst</h3>
+    <p>
+        Voor bekende uitzonderingen onderhouden we een handmatige lijst. Denk aan bedrijven
+        die in de EU zijn geregistreerd maar een Amerikaans moederbedrijf hebben, of aan
+        Europese dochterondernemingen van niet-Europese concerns. Deze lijst zorgt ervoor
+        dat het jurisdictie-oordeel zo accuraat mogelijk is.
+    </p>
+
+    <h2>Hoe beoordelen we soevereiniteit?</h2>
+    <p>
+        Het resultaat wordt uitgedrukt in zes niveaus (0 tot 5), vergelijkbaar met een
+        energielabel (A tot F). Elk niveau geeft aan in hoeverre een dienst onder Europese
+        jurisdictie valt:
+    </p>
+
+    <div class="level-explanation">
+        <div class="level-list">
+            <div class="level-item">
+                <span class="level-dot level-dot-5"></span>
+                <div>
+                    <strong>Niveau 5 (label A) — Volledig soeverein</strong>
+                    <p>EU-bedrijf, servers in de EU, netwerkeigenaar in de EU. Geen buitenlandse jurisdictie van toepassing.</p>
+                </div>
+            </div>
+            <div class="level-item">
+                <span class="level-dot level-dot-4"></span>
+                <div>
+                    <strong>Niveau 4 (label B) — Grotendeels soeverein</strong>
+                    <p>EU-bedrijf met servers in de EU, EER of Zwitserland. Minimale externe afhankelijkheden.</p>
+                </div>
+            </div>
+            <div class="level-item">
+                <span class="level-dot level-dot-3"></span>
+                <div>
+                    <strong>Niveau 3 (label C) — Gedeeltelijk soeverein</strong>
+                    <p>Servers in de EU, maar het moederbedrijf of de netwerkeigenaar is onbekend of buiten de EU gevestigd.</p>
+                </div>
+            </div>
+            <div class="level-item">
+                <span class="level-dot level-dot-2"></span>
+                <div>
+                    <strong>Niveau 2 (label D) — Beperkt soeverein</strong>
+                    <p>Niet-EU moederbedrijf, maar data wordt verwerkt in de EU.</p>
+                </div>
+            </div>
+            <div class="level-item">
+                <span class="level-dot level-dot-1"></span>
+                <div>
+                    <strong>Niveau 1 (label E) — Minimaal soeverein</strong>
+                    <p>Niet-EU moederbedrijf met servers buiten de EU.</p>
+                </div>
+            </div>
+            <div class="level-item">
+                <span class="level-dot level-dot-0"></span>
+                <div>
+                    <strong>Niveau 0 (label F) — Niet soeverein</strong>
+                    <p>Volledig onder buitenlandse jurisdictie, zonder aanvullende waarborgen.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p>
+        Het niveau is geen oordeel maar een indicatie. Een website op niveau 2 is niet
+        "fout" — het betekent dat er diensten worden gebruikt van niet-Europese partijen.
+        De keuze om een niet-Europees bedrijf te gebruiken kan bewust en weloverwogen zijn.
+        Het gaat erom dat u weet welke keuzes er zijn gemaakt en welke alternatieven er bestaan.
+    </p>
+
+    <h2>Hoe om te gaan met soevereiniteit?</h2>
+    <p>
+        Digitale soevereiniteit is geen knop die u omzet — het is een proces. De meeste
+        organisaties hebben historisch gekozen voor bepaalde leveranciers, vaak om goede
+        redenen: functionaliteit, kosten, beschikbaarheid of simpelweg omdat het de standaard
+        was. Dat is begrijpelijk en daar is niets mis mee.
+    </p>
+    <p>
+        Overstappen naar Europese alternatieven kost tijd, geld en aandacht. Het is daarom
+        verstandig om stapsgewijs te werk te gaan:
+    </p>
+
+    <h3>Begin met inventariseren</h3>
+    <p>
+        Weet welke diensten u gebruikt. De scan geeft u dat overzicht. Vaak zijn organisaties
+        verrast door het aantal externe diensten dat hun website laadt — diensten die soms
+        zijn toegevoegd door een vorige leverancier of een oud marketingexperiment.
+    </p>
+
+    <h3>Prioriteer</h3>
+    <p>
+        Niet alles hoeft tegelijk. Begin bij de diensten waar u de meeste controle over heeft
+        en waar de impact het grootst is. Tracking pixels, analytics en webfonts zijn vaak
+        eenvoudig te vervangen. Een complete hostingmigratie is dat niet.
+    </p>
+
+    <h3>Bespreek met uw leverancier</h3>
+    <p>
+        Veel aanpassingen zijn eenvoudiger door te voeren dan u denkt. Uw webbouwer kan vaak
+        Google Fonts vervangen door lokaal gehoste fonts, of een Europese analyticsdienst
+        aansluiten. Het begint met het gesprek.
+    </p>
+
+    <h3>Maak bewuste keuzes</h3>
+    <p>
+        Soms is een niet-Europese dienst de beste optie — vanwege functionaliteit, betrouwbaarheid
+        of kosten. Dat is prima, zolang u weet waarom u die keuze maakt. Een bewuste keuze
+        is altijd beter dan een onbewuste afhankelijkheid.
+    </p>
+
+    <h3>Documenteer uw keuzes</h3>
+    <p>
+        Leg vast welke diensten u gebruikt, waarom u daarvoor heeft gekozen, en welke
+        alternatieven u heeft overwogen. Dat is waardevol voor uw eigen organisatie, voor
+        verantwoording richting toezichthouders, en voor toekomstige beslissingen.
+    </p>
+
+    <h3>Herhaal de scan periodiek</h3>
+    <p>
+        Digitale soevereiniteit is geen eindpunt maar een doorlopend proces. Websites
+        veranderen, diensten worden toegevoegd of vervangen, en de markt van Europese
+        alternatieven groeit. Scan uw website regelmatig om bij te blijven.
+    </p>
+
+    <p class="note">
+        SoevereinScan is er om u te helpen, niet om u te beoordelen. Ons doel is dat u
+        met kennis van zaken kunt beslissen over de digitale diensten die u gebruikt.
+        Welke keuze u ook maakt — als het een bewuste keuze is, is het een goede keuze.
+    </p>
+
+    <p style="margin-top: 2rem; text-align: center;">
+        <a href="{{ base }}/">Terug naar de scan</a>
+    </p>
+
+</section>
+{% endblock %}

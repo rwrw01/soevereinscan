@@ -1,41 +1,54 @@
 {% extends "base.html" %}
-{% block title %}SoevereinScan — Controleer uw SaaS-leveranciers{% endblock %}
+{% block title %}SoevereinScan — Inzicht in uw digitale afhankelijkheden{% endblock %}
 {% block content %}
 <section class="intro">
-    <h2>Wat is digitale soevereiniteit?</h2>
+    <h2>Weet u welke diensten uw website gebruikt?</h2>
     <p>
-        Digitale soevereiniteit betekent dat overheden zelf de regie behouden over hun data,
-        IT-infrastructuur en digitale processen. Wanneer SaaS-diensten worden afgenomen bij
-        bedrijven die onder buitenlandse jurisdicties vallen, kan een buitenlandse overheid
-        in theorie toegang afdwingen tot uw data &mdash; ook als de servers in de EU staan.
+        SoevereinScan analyseert welke externe diensten, servers en organisaties betrokken zijn
+        wanneer iemand uw website bezoekt. U krijgt een helder overzicht van uw digitale
+        afhankelijkheden en de jurisdicties die daarbij een rol spelen.
     </p>
 
-    <h3>Waarom is dit belangrijk voor de publieke sector?</h3>
+    <h3>Waarom is dit relevant?</h3>
     <p>
-        De Rijksoverheid heeft in december 2025 de <strong>Rijksvisie Digitale Soevereiniteit</strong>
-        gepubliceerd, waarin het belang van controle over data en technologie wordt onderstreept.
-        In januari 2026 heeft DICTU een <strong>toetsingsinstrument</strong> gelanceerd waarmee
-        overheidsorganisaties het soevereiniteitsrisico van hun leveranciers kunnen beoordelen.
-        Overheidsorganisaties worden geacht deze risico's actief in kaart te brengen.
+        Elke website maakt gebruik van externe diensten: analytics, fonts, beveiligingstools,
+        betaaldiensten en meer. Elk van die diensten wordt beheerd door een organisatie,
+        ergens ter wereld. Dat bepaalt welke wet- en regelgeving van toepassing is op uw data
+        en die van uw bezoekers. Het is waardevol om te weten welke keuzes er — bewust of
+        onbewust — zijn gemaakt.
     </p>
 
-    <h3>Wat scant deze tool?</h3>
+    <h3>Wat levert de scan op?</h3>
     <p>
-        SoevereinScan analyseert welke diensten, servers en jurisdicties betrokken zijn bij
-        een SaaS-applicatie. De tool controleert IP-adressen, ASN-eigenaren, moederbedrijven
-        en hun vestigingsland. Het resultaat is een overzicht van soevereiniteitsrisico's
-        op basis van het DICTU-risicomodel.
+        De scan brengt in kaart welke diensten uw website laadt, bij welke organisaties die
+        horen, in welk land die organisaties zijn gevestigd, en wat dat betekent voor de
+        soevereiniteit van uw website. U ontvangt ook concrete suggesties voor Europese
+        alternatieven, zodat u een geinformeerd gesprek kunt voeren met uw leverancier of team.
     </p>
+
+    <h3>Hoe gaat de scan om met het resultaat?</h3>
+    <p>
+        SoevereinScan geeft geen goed-of-fout-oordeel. Het resultaat wordt uitgedrukt in
+        niveaus, vergelijkbaar met een energielabel. Een lager niveau is niet per definitie
+        een probleem — het betekent dat er niet-Europese diensten worden gebruikt. Dat kan
+        een bewuste en weloverwogen keuze zijn. Het gaat erom dat u weet welke keuzes er
+        zijn gemaakt en welke alternatieven er bestaan.
+    </p>
+
+    <p>
+        <a href="{{ base }}/hoe-werkt-het">Lees meer over hoe de scan werkt, welke bronnen we gebruiken en hoe u met de resultaten kunt omgaan.</a>
+    </p>
+
     <p class="note">
         Gratis, open source en regelgebaseerd. Er wordt geen AI gebruikt voor de bevindingen.
     </p>
 </section>
 
 <section class="scan-form">
-    <h2>Controleer een SaaS-dienst</h2>
-    <p>Voer de URL van een cloud- of SaaS-dienst in om te analyseren welke partijen en jurisdicties betrokken zijn.</p>
+    <h2>Scan een website</h2>
+    <p>Voer een URL in om te analyseren welke externe diensten en jurisdicties betrokken zijn.</p>
     <form id="scan-form">
-        <input type="url" id="scan-url" name="url" placeholder="https://app.leverancier.nl" required>
+        <input type="url" id="scan-url" name="url" placeholder="https://www.voorbeeld.nl" required>
         <button type="submit" id="scan-btn">Analyseer</button>
     </form>
     <div id="scan-status" class="hidden">

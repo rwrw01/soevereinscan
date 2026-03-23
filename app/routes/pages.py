@@ -18,6 +18,11 @@ async def index(request: Request):
     return templates.TemplateResponse("index.html", _context(request))
 
 
+@router.get("/hoe-werkt-het", response_class=HTMLResponse)
+async def hoe_werkt_het(request: Request):
+    return templates.TemplateResponse("hoe-werkt-het.html", _context(request))
+
+
 @router.get("/results/{scan_id}", response_class=HTMLResponse)
 async def results_page(request: Request, scan_id: str):
     return templates.TemplateResponse("results.html", _context(request, scan_id=scan_id))
