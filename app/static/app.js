@@ -1,6 +1,22 @@
 var BASE = document.documentElement.dataset.base || "";
 
 document.addEventListener("DOMContentLoaded", function () {
+    // Email toggle on scan form
+    var emailToggle = document.getElementById("email-toggle");
+    var emailInput = document.getElementById("scan-email");
+    var emailNote = document.getElementById("email-note");
+    if (emailToggle) {
+        emailToggle.addEventListener("change", function () {
+            if (emailToggle.checked) {
+                emailInput.classList.remove("hidden");
+                emailNote.classList.remove("hidden");
+            } else {
+                emailInput.classList.add("hidden");
+                emailNote.classList.add("hidden");
+            }
+        });
+    }
+
     var form = document.getElementById("scan-form");
     if (form) {
         form.addEventListener("submit", function (e) {
@@ -9,6 +25,7 @@ document.addEventListener("DOMContentLoaded", function () {
             var statusDiv = document.getElementById("scan-status");
             var statusText = document.getElementById("status-text");
             var btn = document.getElementById("scan-btn");
+            var wantsEmail = emailToggle && emailToggle.checked && emailInput && emailInput.value;
 
             btn.disabled = true;
             statusDiv.classList.remove("hidden");
@@ -22,9 +39,24 @@ document.addEventListener("DOMContentLoaded", function () {
                 .then(function (res) {
                     return res.json().then(function (data) {
                         if (res.ok) {
-                            window.location.href = BASE + "/results/" + data.id;
+                            if (wantsEmail) {
+                                // Send email request, then show confirmation
+                                fetch(BASE + "/api/scan/" + data.id + "/email", {
+                                    method: "POST",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify({ email: emailInput.value }),
+                                });
+                                statusText.textContent = "Scan is gestart. Het rapport wordt per email verzonden naar " + emailInput.value + ". U kunt deze pagina sluiten.";
+                                statusDiv.querySelector(".spinner").style.display = "none";
+                            } else {
+                                window.location.href = BASE + "/results/" + data.id;
+                            }
                         } else {
-                            statusText.textContent = "Fout: " + (data.detail || "Onbekende fout");
+                            var detail = data.detail;
+                            if (Array.isArray(detail)) {
+                                detail = detail.map(function(d) { return d.msg || d; }).join("; ");
+                            }
+                            statusText.textContent = "Fout: " + (detail || "Onbekende fout");
                             btn.disabled = false;
                         }
                     });

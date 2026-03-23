@@ -51,6 +51,13 @@
         <input type="url" id="scan-url" name="url" placeholder="https://www.voorbeeld.nl" required>
         <button type="submit" id="scan-btn">Analyseer</button>
     </form>
+    <div class="email-option">
+        <label for="scan-email">
+            <input type="checkbox" id="email-toggle"> Stuur het rapport per email (u hoeft niet te wachten)
+        </label>
+        <input type="email" id="scan-email" name="email" placeholder="uw@emailadres.nl" class="hidden">
+        <p class="email-privacy-note hidden" id="email-note">Uw emailadres wordt niet opgeslagen. Het rapport wordt eenmalig verzonden.</p>
+    </div>
     <div id="scan-status" class="hidden">
         <div class="spinner"></div>
         <p id="status-text">Scan wordt gestart...</p>
