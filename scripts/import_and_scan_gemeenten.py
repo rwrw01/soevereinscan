@@ -18,6 +18,7 @@ import argparse
 import asyncio
 import csv
 import json
+import os
 import uuid
 from datetime import datetime, timezone
 
@@ -169,8 +170,8 @@ async def main():
     parser = argparse.ArgumentParser(description="Import gemeenten en start bulk scans")
     parser.add_argument("--import-only", action="store_true", help="Alleen importeren, niet scannen")
     parser.add_argument("--scan-only", action="store_true", help="Alleen scannen, niet importeren")
-    parser.add_argument("--dsn", default="postgresql://soevereinscan:soevereinscan@localhost:5432/soevereinscan",
-                        help="PostgreSQL DSN")
+    parser.add_argument("--dsn", default=os.environ.get("DATABASE_URL", "postgresql://localhost:5432/soevereinscan"),
+                        help="PostgreSQL DSN (or set DATABASE_URL env var)")
     parser.add_argument("--api", default="https://soevereinscan.publicvibes.nl",
                         help="API base URL")
     parser.add_argument("--csv", default="scripts/gemeenten_websites.csv",

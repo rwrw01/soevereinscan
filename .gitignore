@@ -12,3 +12,11 @@ scan-results/
 
 # PII
 emailadres.png
+
+# Data files — do not track
+scans-export.csv
+Gemeenten.csv
+gemeente_scores.json
+scripts/gemeenten_*.csv
+scripts/gemeenten_*.json
+scripts/bulk_scan_errors.json
