@@ -37,6 +37,18 @@ document.addEventListener("DOMContentLoaded", function () {
                 body: JSON.stringify({ url: url }),
             })
                 .then(function (res) {
+                    if (res.status === 429) {
+                        statusText.textContent = "U heeft te veel scans achter elkaar aangevraagd. Wacht een moment en probeer het opnieuw.";
+                        statusDiv.querySelector(".spinner").style.display = "none";
+                        setTimeout(function () { btn.disabled = false; }, 15000);
+                        return;
+                    }
+                    if (res.status === 502 || res.status === 503 || res.status === 504) {
+                        statusText.textContent = "De service is tijdelijk niet beschikbaar. Probeer het over enkele seconden opnieuw.";
+                        statusDiv.querySelector(".spinner").style.display = "none";
+                        setTimeout(function () { btn.disabled = false; }, 5000);
+                        return;
+                    }
                     return res.json().then(function (data) {
                         if (res.ok) {
                             if (wantsEmail) {
@@ -62,8 +74,9 @@ document.addEventListener("DOMContentLoaded", function () {
                     });
                 })
                 .catch(function () {
-                    statusText.textContent = "Verbindingsfout. Probeer het opnieuw.";
-                    btn.disabled = false;
+                    statusText.textContent = "De service is tijdelijk niet bereikbaar. Controleer uw internetverbinding en probeer het opnieuw.";
+                    statusDiv.querySelector(".spinner").style.display = "none";
+                    setTimeout(function () { btn.disabled = false; }, 5000);
                 });
         });
     }
@@ -76,6 +89,7 @@ function loadResults(scanId) {
     var pollCount = 0;
 
     var statusLabels = {
+        queued: "Scan staat in de wachtrij",
         pending: "Scan wordt voorbereid...",
         scanning: "Website wordt geladen in de browser... Dit kan 30-60 seconden duren.",
         analyzing: "IP-adressen worden geanalyseerd op soevereiniteit...",
@@ -99,11 +113,11 @@ function loadResults(scanId) {
                     results.classList.remove("hidden");
                     renderResults(data);
                 } else if (data.status === "error") {
-                    statusMsg.textContent = "Scan is mislukt. Probeer het opnieuw.";
+                    statusMsg.textContent = "De scan kon niet worden voltooid. Dit kan voorkomen bij websites met strenge beveiligingsinstellingen. Probeer het opnieuw of kies een andere URL.";
                     loading.querySelector(".spinner").style.display = "none";
                 } else {
                     if (pollCount > 40) {
-                        statusMsg.textContent = "De scan duurt langer dan verwacht. Vernieuw de pagina om het opnieuw te proberen.";
+                        statusMsg.textContent = "De scan duurt langer dan verwacht. De website reageert mogelijk traag. Vernieuw de pagina om het opnieuw te proberen.";
                         loading.querySelector(".spinner").style.display = "none";
                         return;
                     }
@@ -113,8 +127,13 @@ function loadResults(scanId) {
                         if (emailBox) emailBox.classList.remove("hidden");
                     }
                     var msg = statusLabels[data.status] || "Bezig...";
+                    if (data.status === "queued" && data.queue_position) {
+                        msg += " (positie " + data.queue_position + ")";
+                    }
                     var elapsed = pollCount * 3;
-                    statusMsg.textContent = msg + " (" + elapsed + "s)";
+                    if (data.status !== "queued") {
+                        msg += " (" + elapsed + "s)";
+                    }
                     setTimeout(poll, 3000);
                 }
             });
@@ -155,12 +174,11 @@ function getSovereigntyLevel(ip) {
 
 function sovereigntyLabel(level) {
     var labels = {
-        5: "Volledig soeverein",
-        4: "Grotendeels soeverein",
-        3: "Gedeeltelijk soeverein",
-        2: "Beperkt soeverein",
-        1: "Minimaal soeverein",
-        0: "Niet soeverein",
+        4: "Volledig soeverein",
+        3: "Digitale weerbaarheid",
+        2: "Data soevereiniteit",
+        1: "Juridische soevereiniteit",
+        0: "Geen soevereiniteit",
     };
     return labels[level] || "Onbekend";
 }
@@ -170,7 +188,7 @@ function levelBadgeClass(level) {
 }
 
 function levelRowClass(level) {
-    if (level >= 4) return "row-level-high";
+    if (level >= 3) return "row-level-high";
     if (level >= 2) return "row-level-mid";
     return "row-level-low";
 }
@@ -259,11 +277,11 @@ function findIpForHostname(hostname, ipAnalyses, hostnameIps) {
 /* --- Energy label scoring --- */
 
 function scoreToLabel(avg) {
-    if (avg >= 4.5) return "A";
-    if (avg >= 4.0) return "B";
-    if (avg >= 3.0) return "C";
-    if (avg >= 2.0) return "D";
-    if (avg >= 1.0) return "E";
+    if (avg >= 3.6) return "A";
+    if (avg >= 3.0) return "B";
+    if (avg >= 2.0) return "C";
+    if (avg >= 1.0) return "D";
+    if (avg >= 0.5) return "E";
     return "F";
 }
 
@@ -279,7 +297,7 @@ function getTopActions(orgMap) {
     for (var i = 0; i < orgKeys.length; i++) {
         var key = orgKeys[i];
         var org = orgMap[key];
-        if (org.level >= 4) continue;
+        if (org.level >= 3) continue;
 
         if (/pixel|track|pinterest|facebook|doubleclick|fb\.com|hotjar/.test(key)) {
             hasTracking = true;
@@ -396,25 +414,31 @@ function getServiceRole(orgKey, hostnames, isFirstParty) {
     return cat.role;
 }
 
-function getAlternative(orgKey) {
-    var alts = {
-        "cloudflare": "Europese alternatieven: Gcore (Luxemburg) en OVHcloud (Frankrijk)",
-        "google": "Europees alternatief: Matomo of Fathom",
-        "akamai": "Europese alternatieven: Gcore (Luxemburg) en OVHcloud (Frankrijk)",
-        "fastly": "Europese alternatieven: Gcore (Luxemburg) en OVHcloud (Frankrijk)",
-        "amazon": "Europese alternatieven: Hetzner (Duitsland), Scaleway (Frankrijk)",
-        "microsoft": "Europese alternatieven: Nextcloud, Collabora",
-        "adobe": "Tip: lettertypen zelf hosten op uw eigen server",
-        "facebook": "Tip: overweeg of deze tracking noodzakelijk is voor uw website",
-        "pinterest": "Tip: overweeg of deze tracking noodzakelijk is voor uw website",
+function getAlternative(orgKey, categoryKey) {
+    // Category-based alternatives for multi-purpose providers
+    var categoryAlts = {
+        hosting: "Europese alternatieven: Hetzner (Duitsland), Scaleway (Frankrijk), OVHcloud (Frankrijk)",
+        cdn: "Europese alternatieven: Gcore (Luxemburg) en OVHcloud (Frankrijk)",
+        analytics: "Europees alternatief: Matomo of Fathom",
+        tracking: "Tip: overweeg of deze tracking noodzakelijk is voor uw website",
+        fonts: "Tip: lettertypen zelf hosten op uw eigen server",
+    };
+
+    // Provider-specific overrides only where category doesn't cover it
+    var specificAlts = {
         "doubleclick": "Tip: advertentietracking verwijderen",
         "hotjar": "Europees alternatief: Open Web Analytics",
     };
-    var altKeys = Object.keys(alts);
-    for (var i = 0; i < altKeys.length; i++) {
-        if (orgKey.indexOf(altKeys[i]) !== -1) {
-            return alts[altKeys[i]];
+    var specKeys = Object.keys(specificAlts);
+    for (var i = 0; i < specKeys.length; i++) {
+        if (orgKey.indexOf(specKeys[i]) !== -1) {
+            return specificAlts[specKeys[i]];
         }
+    }
+
+    // Use category-based alternative
+    if (categoryKey && categoryAlts[categoryKey]) {
+        return categoryAlts[categoryKey];
     }
     return null;
 }
@@ -473,7 +497,7 @@ function renderResults(data) {
     var euOrgCount = 0;
     var nonEuOrgCount = 0;
     for (var k = 0; k < orgKeys.length; k++) {
-        if (orgMap[orgKeys[k]].level >= 4) {
+        if (orgMap[orgKeys[k]].level >= 3) {
             euOrgCount++;
         } else {
             nonEuOrgCount++;
@@ -598,12 +622,12 @@ function renderScoreSummary(averageLevel, totalOrgs, euCount, nonEuCount, orgMap
         if (sCat && sCat.key === "hosting") {
             hostingOrgs.push({ name: sOrg.name, level: sOrg.level });
         }
-        if (sCat && (sCat.key === "hosting" || sCat.key === "cdn") && sOrg.level < 4) {
+        if (sCat && (sCat.key === "hosting" || sCat.key === "cdn") && sOrg.level < 3) {
             nonEuHighImpact.push(sOrg.name);
         }
     }
 
-    var hostingAllEu = hostingOrgs.length > 0 && hostingOrgs.every(function(h) { return h.level >= 4; });
+    var hostingAllEu = hostingOrgs.length > 0 && hostingOrgs.every(function(h) { return h.level >= 3; });
     var hostingNames = hostingOrgs.map(function(h) { return h.name; });
 
     if (hostingAllEu) {
@@ -633,12 +657,12 @@ function renderScoreSummary(averageLevel, totalOrgs, euCount, nonEuCount, orgMap
 
 /* --- SECTION 2: Services grouped by category --- */
 
-function buildServiceRow(orgKey, org, hostnames, scanUrl, isFirstParty) {
+function buildServiceRow(orgKey, org, hostnames, scanUrl, isFirstParty, categoryKey) {
     var row = document.createElement("div");
     row.className = "service-row";
-    if (org.level >= 4) {
+    if (org.level >= 3) {
         row.classList.add("service-row-ok");
-    } else if (org.level <= 2) {
+    } else if (org.level <= 1) {
         row.classList.add("service-row-warn");
     }
 
@@ -684,7 +708,7 @@ function buildServiceRow(orgKey, org, hostnames, scanUrl, isFirstParty) {
             break;
         }
     }
-    if (org.level < 4) {
+    if (org.level < 3) {
         var actionSpan = document.createElement("span");
         actionSpan.className = "service-action";
         if (hasThirdParty) {
@@ -696,8 +720,8 @@ function buildServiceRow(orgKey, org, hostnames, scanUrl, isFirstParty) {
     }
 
     // Alternative suggestion
-    var alt = getAlternative(orgKey);
-    if (alt && org.level < 4) {
+    var alt = getAlternative(orgKey, categoryKey);
+    if (alt && org.level < 3) {
         var altSpan = document.createElement("span");
         altSpan.className = "service-alternative";
         altSpan.textContent = alt;
@@ -763,7 +787,7 @@ function renderServices(orgMap, orgHostnames, scanUrl, orgCategories) {
                     break;
                 }
             }
-            container.appendChild(buildServiceRow(oKey, org, hostnames, scanUrl, isFirstParty));
+            container.appendChild(buildServiceRow(oKey, org, hostnames, scanUrl, isFirstParty, catKey));
         }
 
         anyRendered = true;
@@ -809,7 +833,7 @@ function renderImprovementPath(orgMap, currentAvg, ipList) {
     // Check for tracking
     var hasTracking = false;
     for (var ti = 0; ti < orgKeys.length; ti++) {
-        if (/pixel|track|pinterest|facebook|doubleclick|fb\.com|hotjar/.test(orgKeys[ti]) && orgMap[orgKeys[ti]].level < 4) {
+        if (/pixel|track|pinterest|facebook|doubleclick|fb\.com|hotjar/.test(orgKeys[ti]) && orgMap[orgKeys[ti]].level < 3) {
             hasTracking = true;
             break;
         }
@@ -818,7 +842,7 @@ function renderImprovementPath(orgMap, currentAvg, ipList) {
     // Check for non-EU analytics
     var hasNonEuAnalytics = false;
     for (var ai = 0; ai < orgKeys.length; ai++) {
-        if (/analytics|gtag|google-analytics|googletagmanager|google/.test(orgKeys[ai]) && orgMap[orgKeys[ai]].level < 4) {
+        if (/analytics|gtag|google-analytics|googletagmanager|google/.test(orgKeys[ai]) && orgMap[orgKeys[ai]].level < 3) {
             hasNonEuAnalytics = true;
             break;
         }
@@ -827,7 +851,7 @@ function renderImprovementPath(orgMap, currentAvg, ipList) {
     // Check for non-EU infra
     var hasNonEuInfra = false;
     for (var ii = 0; ii < orgKeys.length; ii++) {
-        if (/cloudflare|akamai|fastly|amazon|aws|microsoft|azure|adobe|typekit/.test(orgKeys[ii]) && orgMap[orgKeys[ii]].level < 4) {
+        if (/cloudflare|akamai|fastly|amazon|aws|microsoft|azure|adobe|typekit/.test(orgKeys[ii]) && orgMap[orgKeys[ii]].level < 3) {
             hasNonEuInfra = true;
             break;
         }
@@ -938,7 +962,7 @@ function renderImprovementPath(orgMap, currentAvg, ipList) {
 
         var estimate = document.createElement("p");
         estimate.className = "step-estimate";
-        estimate.textContent = "Verwachte score: " + simAvg + " / 5 (label " + simLabel + ")";
+        estimate.textContent = "Verwachte score: " + simAvg + " / 4 (label " + simLabel + ")";
         stepDiv.appendChild(estimate);
 
         container.appendChild(stepDiv);
@@ -962,10 +986,10 @@ function renderQuestions(orgMap, hostnameIps, ipList, scanUrl) {
     var questions = [];
     var orgKeys = Object.keys(orgMap);
 
-    // For each org with level <= 2: verwerkersovereenkomst question
+    // For each org with level <= 1: verwerkersovereenkomst question
     for (var i = 0; i < orgKeys.length; i++) {
         var org = orgMap[orgKeys[i]];
-        if (org.level <= 2) {
+        if (org.level <= 1) {
             questions.push({
                 category: "Verwerkersovereenkomsten",
                 text: "Heeft u een verwerkersovereenkomst met " + org.name + "?",
@@ -1078,7 +1102,7 @@ function renderDistribution(distribution, total) {
     var distContainer = document.getElementById("level-distribution");
     distContainer.textContent = "";
 
-    for (var lvl = 5; lvl >= 0; lvl--) {
+    for (var lvl = 4; lvl >= 0; lvl--) {
         var count = distribution[lvl] || 0;
         var pct = Math.round((count / total) * 100);
 
@@ -1087,7 +1111,7 @@ function renderDistribution(distribution, total) {
 
         var label = document.createElement("span");
         label.className = "dist-label";
-        label.textContent = lvl + " -- " + sovereigntyLabel(lvl);
+        label.textContent = "SEAL-" + lvl + " — " + sovereigntyLabel(lvl);
 
         var barOuter = document.createElement("div");
         barOuter.className = "dist-bar-outer";
@@ -1321,8 +1345,8 @@ function renderMap(ipAnalyses) {
     }
 
     var levelColors = {
-        5: "#15803d", 4: "#22c55e", 3: "#eab308",
-        2: "#f97316", 1: "#fb923c", 0: "#9ca3af",
+        4: "#15803d", 3: "#22c55e", 2: "#eab308",
+        1: "#f97316", 0: "#9ca3af",
     };
 
     var clusters = {};
@@ -1333,7 +1357,7 @@ function renderMap(ipAnalyses) {
         var clng = Math.round(ipItem.longitude * 10) / 10;
         var key = clat + "," + clng;
         if (!clusters[key]) {
-            clusters[key] = { lat: clat, lng: clng, count: 0, level: 5, ips: [] };
+            clusters[key] = { lat: clat, lng: clng, count: 0, level: 4, ips: [] };
         }
         clusters[key].count++;
         var clvl = getSovereigntyLevel(ipItem);

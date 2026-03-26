@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.database import get_session
-from app.models import Scan
+from app.models import Organization, Scan
 from app.schemas import ScanRequest, ScanResponse, ScanResultResponse
 
 router = APIRouter(prefix="/api")
@@ -39,7 +39,10 @@ async def start_scan(
 
     scan = await orchestrator.start_scan(session, str(request.url))
     background_tasks.add_task(_process_scan_background, scan.id)
-    return scan
+    position = orchestrator.queue_position.get(scan.id)
+    return ScanResponse.model_validate(scan, from_attributes=True).model_copy(
+        update={"queue_position": position}
+    )
 
 
 async def _process_scan_background(scan_id: uuid.UUID):
@@ -74,7 +77,12 @@ async def get_scan(
     if not scan:
         raise HTTPException(status_code=404, detail="Scan niet gevonden")
 
-    return scan
+    from app.main import get_orchestrator
+    orchestrator = get_orchestrator()
+    position = orchestrator.queue_position.get(scan.id)
+    return ScanResultResponse.model_validate(scan, from_attributes=True).model_copy(
+        update={"queue_position": position}
+    )
 
 
 @router.post("/scan/{scan_id}/email", status_code=202)
@@ -85,11 +93,11 @@ async def send_report_email(
     session: AsyncSession = Depends(get_session),
 ):
     scan = await session.get(Scan, scan_id)
-    if not scan or scan.status != "done":
-        raise HTTPException(
-            status_code=404,
-            detail="Scan niet gevonden of nog niet afgerond",
-        )
+    if not scan:
+        raise HTTPException(status_code=404, detail="Scan niet gevonden")
+
+    if scan.status == "error":
+        raise HTTPException(status_code=400, detail="Scan is mislukt")
 
     background_tasks.add_task(
         _send_report_email,
@@ -103,11 +111,51 @@ async def send_report_email(
 async def _send_report_email(
     scan_id: uuid.UUID, email: str, url: str
 ) -> None:
+    import asyncio
+
     from app.database import async_session
     from app.services.email import send_report
     from app.services.pdf import generate_report_pdf
+
+    # Wait for scan to complete (max 5 minutes)
+    for _ in range(100):
+        async with async_session() as session:
+            scan = await session.get(Scan, scan_id)
+        if not scan:
+            return
+        if scan.status == "done":
+            break
+        if scan.status == "error":
+            return
+        await asyncio.sleep(3)
+    else:
+        return  # Timeout — scan never completed
 
     async with async_session() as session:
         pdf = await generate_report_pdf(str(scan_id), session)
     if pdf:
         await send_report(email, pdf, url)
+
+
+@router.get("/gemeenten/scores")
+async def gemeente_scores(session: AsyncSession = Depends(get_session)):
+    """Return SEAL scores for all gemeenten (used by the map page)."""
+    from sqlalchemy import func, text
+
+    result = await session.execute(
+        text("""
+            SELECT DISTINCT ON (o.name)
+                o.name, o.provincie,
+                ROUND((s.summary->>'weighted_average_level')::numeric, 2) AS score,
+                (s.summary->>'total_hostnames')::int AS total_hostnames,
+                (s.summary->>'third_party_hostnames')::int AS third_party_hostnames,
+                s.summary->'level_distribution' AS level_distribution,
+                s.summary->>'final_url' AS final_url
+            FROM scans s
+            JOIN organizations o ON s.organization_id = o.id
+            WHERE s.status = 'done' AND o.category = 'gemeente'
+            ORDER BY o.name, s.completed_at DESC
+        """)
+    )
+    rows = result.mappings().all()
+    return [dict(r) for r in rows]

@@ -63,53 +63,46 @@
 
     <h2>Hoe beoordelen we soevereiniteit?</h2>
     <p>
-        Het resultaat wordt uitgedrukt in zes niveaus (0 tot 5), vergelijkbaar met een
-        energielabel (A tot F). Elk niveau geeft aan in hoeverre een dienst onder Europese
-        jurisdictie valt:
+        Het resultaat wordt uitgedrukt in vijf SEAL-niveaus (0 tot 4), gebaseerd op het
+        EU Cloud Sovereignty Framework. Vergelijkbaar met een energielabel (A tot F).
+        Elk niveau geeft aan in hoeverre een dienst onder Europese controle valt:
     </p>
 
     <div class="level-explanation">
         <div class="level-list">
             <div class="level-item">
-                <span class="level-dot level-dot-5"></span>
-                <div>
-                    <strong>Niveau 5 (label A) — Volledig soeverein</strong>
-                    <p>EU-bedrijf, servers in de EU én de netwerkeigenaar is bevestigd als EU-organisatie via PeeringDB. Alle drie de lagen zijn Europees.</p>
-                </div>
-            </div>
-            <div class="level-item">
                 <span class="level-dot level-dot-4"></span>
                 <div>
-                    <strong>Niveau 4 (label B) — Grotendeels soeverein</strong>
-                    <p>EU-bedrijf met servers in de EU, maar de netwerkeigenaar is onbekend of niet apart bevestigd. Of: geen bekend moederbedrijf, maar PeeringDB bevestigt een EU-organisatie.</p>
+                    <strong>SEAL-4 (label A) — Volledig soeverein</strong>
+                    <p>Technologie en operatie volledig onder EU-controle. EU-bedrijf, EU-servers, EU-netwerkeigenaar. Geen buitenlandse jurisdictie van toepassing.</p>
                 </div>
             </div>
             <div class="level-item">
                 <span class="level-dot level-dot-3"></span>
                 <div>
-                    <strong>Niveau 3 (label C) — Gedeeltelijk soeverein</strong>
-                    <p>Servers in de EU, maar het moederbedrijf of de netwerkeigenaar is onbekend of buiten de EU gevestigd.</p>
+                    <strong>SEAL-3 (label B) — Digitale weerbaarheid</strong>
+                    <p>EU-actoren hebben betekenisvolle invloed. EU-bedrijf met servers in de EU/EER/CH. Marginale niet-EU controle mogelijk.</p>
                 </div>
             </div>
             <div class="level-item">
                 <span class="level-dot level-dot-2"></span>
                 <div>
-                    <strong>Niveau 2 (label D) — Beperkt soeverein</strong>
-                    <p>Niet-EU moederbedrijf, maar data wordt verwerkt in de EU.</p>
+                    <strong>SEAL-2 (label C) — Data soevereiniteit</strong>
+                    <p>EU-recht afdwingbaar, maar materiële niet-EU afhankelijkheden. Servers in de EU, moederbedrijf of netwerkeigenaar buiten de EU.</p>
                 </div>
             </div>
             <div class="level-item">
                 <span class="level-dot level-dot-1"></span>
                 <div>
-                    <strong>Niveau 1 (label E) — Minimaal soeverein</strong>
-                    <p>Niet-EU moederbedrijf met servers buiten de EU.</p>
+                    <strong>SEAL-1 (label D/E) — Juridische soevereiniteit</strong>
+                    <p>EU-recht formeel van toepassing maar beperkt afdwingbaar. Niet-EU moederbedrijf, ongeacht serverlocatie.</p>
                 </div>
             </div>
             <div class="level-item">
                 <span class="level-dot level-dot-0"></span>
                 <div>
-                    <strong>Niveau 0 (label F) — Niet soeverein</strong>
-                    <p>Volledig onder buitenlandse jurisdictie, zonder aanvullende waarborgen.</p>
+                    <strong>SEAL-0 (label F) — Geen soevereiniteit</strong>
+                    <p>Volledige controle door niet-EU partijen. Geen waarborgen voor digitale soevereiniteit vastgesteld.</p>
                 </div>
             </div>
         </div>
@@ -137,35 +130,35 @@
     <div class="level-explanation">
         <div class="level-list">
             <div class="level-item">
-                <span class="level-dot level-dot-5"></span>
+                <span class="level-dot level-dot-4"></span>
                 <div>
                     <strong>Hosting & infrastructuur — hoogste impact</strong>
                     <p>De servers waarop uw website draait. Hier gaat al het verkeer van uw bezoekers doorheen. Dit telt het zwaarst mee.</p>
                 </div>
             </div>
             <div class="level-item">
-                <span class="level-dot level-dot-4"></span>
+                <span class="level-dot level-dot-3"></span>
                 <div>
                     <strong>Beveiliging & versnelling (CDN) — hoge impact</strong>
                     <p>Diensten die uw website beschermen en versnellen, zoals Cloudflare. Deze zien al het verkeer als tussenstation.</p>
                 </div>
             </div>
             <div class="level-item">
-                <span class="level-dot level-dot-3"></span>
+                <span class="level-dot level-dot-2"></span>
                 <div>
                     <strong>Overige externe diensten — gemiddelde impact</strong>
                     <p>Diensten die niet in een andere categorie vallen maar wel data van uw bezoekers ontvangen.</p>
                 </div>
             </div>
             <div class="level-item">
-                <span class="level-dot level-dot-2"></span>
+                <span class="level-dot level-dot-1"></span>
                 <div>
                     <strong>Bezoekersstatistieken & tracking — beperkte impact</strong>
                     <p>Analytics en tracking scripts (zoals Google Analytics) versturen beperkte gegevens: paginabezoeken, klikgedrag. Dit weegt minder zwaar dan hosting.</p>
                 </div>
             </div>
             <div class="level-item">
-                <span class="level-dot level-dot-1"></span>
+                <span class="level-dot level-dot-0"></span>
                 <div>
                     <strong>Lettertypen & hulpbestanden — minimale impact</strong>
                     <p>Lettertypen en kleine bestanden die worden opgehaald. Hierbij gaat minimale data naar de aanbieder (alleen welke pagina het lettertype laadt).</p>
@@ -175,9 +168,9 @@
     </div>
 
     <p>
-        <strong>Voorbeeld:</strong> een website die op een Nederlandse server draait (niveau 5)
+        <strong>Voorbeeld:</strong> een website die op een Nederlandse server draait (niveau 4)
         maar Google Analytics gebruikt (niveau 1) scoort veel beter dan een website die
-        bij Amazon draait (niveau 2) maar geen tracking heeft. De hosting bepaalt het
+        bij Amazon draait (niveau 1) maar geen tracking heeft. De hosting bepaalt het
         merendeel van de score, omdat daar de meeste data doorheen gaat.
     </p>
     <p>

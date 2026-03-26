@@ -40,6 +40,7 @@ class ScanResponse(BaseModel):
     url: str
     status: str
     created_at: datetime
+    queue_position: int | None = None
 
     model_config = {"from_attributes": True}
 
@@ -68,5 +69,6 @@ class ScanResultResponse(BaseModel):
     completed_at: datetime | None
     summary: dict | None
     ip_analyses: list[IpAnalysisResponse]
+    queue_position: int | None = None
 
     model_config = {"from_attributes": True}

@@ -278,12 +278,11 @@ details[open] > summary > .section-toggle-heading::before {
 .dist-bar-inner { height: 100%; border-radius: 4px; transition: width 0.4s ease; min-width: 0; }
 .dist-count { min-width: 70px; font-size: 0.82rem; color: #9ca3af; text-align: right; }
 
-/* Distribution bar colors */
-.dist-bar-level-5 { background: #15803d; }
-.dist-bar-level-4 { background: #22c55e; }
-.dist-bar-level-3 { background: #eab308; }
-.dist-bar-level-2 { background: #f97316; }
-.dist-bar-level-1 { background: #fb923c; }
+/* Distribution bar colors (0-4 scale, aligned with DICTU/EU SEAL) */
+.dist-bar-level-4 { background: #15803d; }
+.dist-bar-level-3 { background: #22c55e; }
+.dist-bar-level-2 { background: #eab308; }
+.dist-bar-level-1 { background: #f97316; }
 .dist-bar-level-0 { background: #6b7280; }
 
 /* --- Level explanation (hoe-werkt-het page) --- */
@@ -300,11 +299,10 @@ details[open] > summary > .section-toggle-heading::before {
 .level-dot {
     width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; margin-top: 0.3rem;
 }
-.level-dot-5 { background: #15803d; }
-.level-dot-4 { background: #22c55e; }
-.level-dot-3 { background: #eab308; }
-.level-dot-2 { background: #f97316; }
-.level-dot-1 { background: #fb923c; }
+.level-dot-4 { background: #15803d; }
+.level-dot-3 { background: #22c55e; }
+.level-dot-2 { background: #eab308; }
+.level-dot-1 { background: #f97316; }
 .level-dot-0 { background: #6b7280; }
 .level-item strong { color: #fff; }
 .level-item p { color: #d1d5db; font-size: 0.9rem; margin: 0.15rem 0 0; }
@@ -343,11 +341,10 @@ th {
     padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 700;
     white-space: nowrap;
 }
-.badge-level-5 { background: #15803d; color: #fff; }
-.badge-level-4 { background: #22c55e; color: #fff; }
-.badge-level-3 { background: #eab308; color: #fff; }
-.badge-level-2 { background: #f97316; color: #fff; }
-.badge-level-1 { background: #fb923c; color: #fff; }
+.badge-level-4 { background: #15803d; color: #fff; }
+.badge-level-3 { background: #22c55e; color: #fff; }
+.badge-level-2 { background: #eab308; color: #fff; }
+.badge-level-1 { background: #f97316; color: #fff; }
 .badge-level-0 { background: #6b7280; color: #fff; }
 
 /* --- Legal context block (section 4) --- */

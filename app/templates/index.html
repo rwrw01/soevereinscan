@@ -2,28 +2,35 @@
 {% block title %}SoevereinScan — Inzicht in uw digitale afhankelijkheden{% endblock %}
 {% block content %}
 <section class="intro">
-    <h2>Weet u welke diensten uw website gebruikt?</h2>
+    <h2>Weet u welke diensten uw website of webapplicatie gebruikt?</h2>
     <p>
         SoevereinScan analyseert welke externe diensten, servers en organisaties betrokken zijn
-        wanneer iemand uw website bezoekt. U krijgt een helder overzicht van uw digitale
-        afhankelijkheden en de jurisdicties die daarbij een rol spelen.
+        wanneer iemand uw website of webapplicatie bezoekt. U krijgt een helder overzicht van
+        uw digitale afhankelijkheden en de jurisdicties die daarbij een rol spelen.
+    </p>
+    <p>
+        U kunt elke publiek bereikbare URL scannen: een website, een portaal, een SaaS-applicatie
+        of een intranetpagina met een publieke inlogpagina. De scan analyseert de "voordeur" —
+        alles wat geladen wordt voordat u inlogt. Wat er achter een inlogscherm gebeurt, kan de
+        scan niet zien omdat er niet daadwerkelijk wordt ingelogd.
     </p>
 
     <h3>Waarom is dit relevant?</h3>
     <p>
-        Elke website maakt gebruik van externe diensten: analytics, fonts, beveiligingstools,
-        betaaldiensten en meer. Elk van die diensten wordt beheerd door een organisatie,
-        ergens ter wereld. Dat bepaalt welke wet- en regelgeving van toepassing is op uw data
-        en die van uw bezoekers. Het is waardevol om te weten welke keuzes er — bewust of
-        onbewust — zijn gemaakt.
+        Elke website of webapplicatie maakt gebruik van externe diensten: analytics, fonts,
+        beveiligingstools, betaaldiensten en meer. Elk van die diensten wordt beheerd door een
+        organisatie, ergens ter wereld. Dat bepaalt welke wet- en regelgeving van toepassing is
+        op uw data en die van uw bezoekers. Het is waardevol om te weten welke keuzes er —
+        bewust of onbewust — zijn gemaakt.
     </p>
 
     <h3>Wat levert de scan op?</h3>
     <p>
-        De scan brengt in kaart welke diensten uw website laadt, bij welke organisaties die
+        De scan brengt in kaart welke diensten worden geladen, bij welke organisaties die
         horen, in welk land die organisaties zijn gevestigd, en wat dat betekent voor de
-        soevereiniteit van uw website. U ontvangt ook concrete suggesties voor Europese
-        alternatieven, zodat u een geinformeerd gesprek kunt voeren met uw leverancier of team.
+        soevereiniteit van uw website of applicatie. U ontvangt ook concrete suggesties voor
+        Europese alternatieven, zodat u een geinformeerd gesprek kunt voeren met uw leverancier
+        of team.
     </p>
 
     <h3>Hoe gaat de scan om met het resultaat?</h3>
@@ -45,7 +52,7 @@
 </section>
 
 <section class="scan-form">
-    <h2>Scan een website</h2>
+    <h2>Scan een website of webapplicatie</h2>
     <p>Voer een URL in om te analyseren welke externe diensten en jurisdicties betrokken zijn.</p>
     <form id="scan-form">
         <input type="url" id="scan-url" name="url" placeholder="https://www.voorbeeld.nl" required>

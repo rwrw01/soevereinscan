@@ -49,6 +49,12 @@ async def lifespan(app: FastAPI):
         ripestat=ripestat,
     )
 
+    # Resume queued scans from previous session
+    from app.database import async_session
+    resumed = await _orchestrator.resume_queued_scans(async_session)
+    if resumed:
+        logging.info("Resumed %d queued scans from database", resumed)
+
     yield
 
     if geoip:

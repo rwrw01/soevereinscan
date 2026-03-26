@@ -148,11 +148,10 @@ td { padding: 6pt 8pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; vertica
 /* Level explanation */
 .level-item { display: flex; align-items: flex-start; margin: 4pt 0; page-break-inside: avoid; }
 .level-dot { display: inline-block; width: 10pt; height: 10pt; border-radius: 50%; margin-right: 8pt; margin-top: 3pt; flex-shrink: 0; }
-.level-dot-5 { background: #15803d; }
-.level-dot-4 { background: #22c55e; }
-.level-dot-3 { background: #eab308; }
-.level-dot-2 { background: #f97316; }
-.level-dot-1 { background: #dc2626; }
+.level-dot-4 { background: #15803d; }
+.level-dot-3 { background: #22c55e; }
+.level-dot-2 { background: #eab308; }
+.level-dot-1 { background: #f97316; }
 .level-dot-0 { background: #991b1b; }
 .level-text { font-size: 9pt; }
 .level-text strong { font-size: 9pt; }
@@ -177,7 +176,7 @@ td { padding: 6pt 8pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; vertica
     <div class="score-circle score-red">
     {% endif %}
         <span class="score-value">{{ "%.1f"|format(score) }}</span>
-        <span class="score-max">/ 5</span>
+        <span class="score-max">/ 4</span>
     </div>
 
     <div>
@@ -295,10 +294,10 @@ td { padding: 6pt 8pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; vertica
 
 {% if distribution %}
 <h3>Verdeling soevereiniteitsniveaus</h3>
-{% set level_labels = {5: "Niveau 5 — Volledig soeverein", 4: "Niveau 4 — Grotendeels soeverein", 3: "Niveau 3 — Gedeeltelijk soeverein", 2: "Niveau 2 — Beperkt soeverein", 1: "Niveau 1 — Minimaal soeverein", 0: "Niveau 0 — Niet soeverein"} %}
-{% set level_colors = {5: "#15803d", 4: "#22c55e", 3: "#eab308", 2: "#f97316", 1: "#dc2626", 0: "#991b1b"} %}
+{% set level_labels = {4: "SEAL-4 — Volledig soeverein", 3: "SEAL-3 — Digitale weerbaarheid", 2: "SEAL-2 — Data soevereiniteit", 1: "SEAL-1 — Juridische soevereiniteit", 0: "SEAL-0 — Geen soevereiniteit"} %}
+{% set level_colors = {4: "#15803d", 3: "#22c55e", 2: "#eab308", 1: "#f97316", 0: "#991b1b"} %}
 {% set total_ips = distribution.values()|sum %}
-{% for lvl in [5, 4, 3, 2, 1, 0] %}
+{% for lvl in [4, 3, 2, 1, 0] %}
 {% if distribution.get(lvl|string, 0) > 0 or distribution.get(lvl, 0) > 0 %}
 {% set count = distribution.get(lvl|string, distribution.get(lvl, 0)) %}
 <div class="dist-bar-container">
@@ -347,50 +346,43 @@ td { padding: 6pt 8pt; border-bottom: 1px solid #e5e7eb; font-size: 9pt; vertica
 <h3>Wat betekent elk niveau?</h3>
 <div style="margin-bottom: 12pt;">
     <div class="level-item">
-        <span class="level-dot level-dot-5"></span>
-        <div class="level-text">
-            <strong>Niveau 5 — Volledig soeverein</strong>
-            <p>EU-bedrijf met servers in de EU en netwerkeigenaar in de EU. Geen buitenlandse jurisdictie van toepassing.</p>
-        </div>
-    </div>
-    <div class="level-item">
         <span class="level-dot level-dot-4"></span>
         <div class="level-text">
-            <strong>Niveau 4 — Grotendeels soeverein</strong>
-            <p>EU-bedrijf met servers in de EU/EER/CH. Minimale externe afhankelijkheden.</p>
+            <strong>SEAL-4 — Volledig soeverein</strong>
+            <p>Technologie en operatie volledig onder EU-controle. EU-bedrijf, EU-servers, EU-netwerkeigenaar. Geen buitenlandse jurisdictie van toepassing.</p>
         </div>
     </div>
     <div class="level-item">
         <span class="level-dot level-dot-3"></span>
         <div class="level-text">
-            <strong>Niveau 3 — Gedeeltelijk soeverein</strong>
-            <p>Servers in de EU, maar het moederbedrijf of de netwerkeigenaar is onbekend of buiten de EU.</p>
+            <strong>SEAL-3 — Digitale weerbaarheid</strong>
+            <p>EU-actoren hebben betekenisvolle invloed. EU-bedrijf met servers in de EU/EER/CH. Marginale niet-EU controle.</p>
         </div>
     </div>
     <div class="level-item">
         <span class="level-dot level-dot-2"></span>
         <div class="level-text">
-            <strong>Niveau 2 — Beperkt soeverein</strong>
-            <p>Niet-EU moederbedrijf, maar data wordt verwerkt in de EU.</p>
+            <strong>SEAL-2 — Data soevereiniteit</strong>
+            <p>EU-recht afdwingbaar, maar materiële niet-EU afhankelijkheden. Servers in de EU, moederbedrijf of netwerkeigenaar buiten de EU.</p>
         </div>
     </div>
     <div class="level-item">
         <span class="level-dot level-dot-1"></span>
         <div class="level-text">
-            <strong>Niveau 1 — Minimaal soeverein</strong>
-            <p>Niet-EU moederbedrijf met servers buiten de EU.</p>
+            <strong>SEAL-1 — Juridische soevereiniteit</strong>
+            <p>EU-recht formeel van toepassing maar beperkt afdwingbaar. Niet-EU moederbedrijf, ongeacht serverlocatie.</p>
         </div>
     </div>
     <div class="level-item">
         <span class="level-dot level-dot-0"></span>
         <div class="level-text">
-            <strong>Niveau 0 — Niet soeverein</strong>
-            <p>Volledig onder buitenlandse jurisdictie, geen waarborgen vastgesteld.</p>
+            <strong>SEAL-0 — Geen soevereiniteit</strong>
+            <p>Volledige controle door niet-EU partijen. Geen waarborgen voor digitale soevereiniteit vastgesteld.</p>
         </div>
     </div>
 </div>
 <p style="font-size: 8pt; color: #64748b;">
-    Indeling gebaseerd op het DICTU-toetsingsinstrument Digitale Soevereiniteit (januari 2026)
+    Indeling gebaseerd op het EU Cloud Sovereignty Framework (SEAL-niveaus, 2025)
     en de Rijksvisie Digitale Soevereiniteit (december 2025).
 </p>
 

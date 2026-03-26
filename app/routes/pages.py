@@ -26,3 +26,8 @@ async def hoe_werkt_het(request: Request):
 @router.get("/results/{scan_id}", response_class=HTMLResponse)
 async def results_page(request: Request, scan_id: str):
     return templates.TemplateResponse("results.html", _context(request, scan_id=scan_id))
+
+
+@router.get("/gemeenten", response_class=HTMLResponse)
+async def gemeenten_kaart(request: Request):
+    return templates.TemplateResponse("gemeenten.html", _context(request))

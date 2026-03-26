@@ -1,11 +1,30 @@
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text, Index
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+
+class Organization(Base):
+    __tablename__ = "organizations"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    category: Mapped[str] = mapped_column(String(50), nullable=False)  # gemeente, provincie, zbo, waterschap, ...
+    website: Mapped[str] = mapped_column(String(2048), nullable=False)
+    provincie: Mapped[str | None] = mapped_column(String(100))
+    cbs_code: Mapped[str | None] = mapped_column(String(10))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    scans: Mapped[list["Scan"]] = relationship(back_populates="organization")
+
+    __table_args__ = (
+        Index("ix_organizations_category", "category"),
+        Index("ix_organizations_website", "website", unique=True),
+    )
 
 
 class Scan(Base):
@@ -18,7 +37,9 @@ class Scan(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     summary: Mapped[dict | None] = mapped_column(JSONB)
+    organization_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("organizations.id"), nullable=True)
 
+    organization: Mapped["Organization | None"] = relationship(back_populates="scans")
     resources: Mapped[list["DiscoveredResource"]] = relationship(back_populates="scan", cascade="all, delete-orphan")
     ip_analyses: Mapped[list["IpAnalysis"]] = relationship(back_populates="scan", cascade="all, delete-orphan")
     traceroutes: Mapped[list["TracerouteResult"]] = relationship(back_populates="scan", cascade="all, delete-orphan")

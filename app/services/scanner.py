@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import uuid
 from collections import Counter
@@ -140,15 +141,95 @@ class ScanOrchestrator:
         self._ripe_atlas = ripe_atlas
         self._capture = capture
         self._ripestat = ripestat
+        self._scan_semaphore = asyncio.Semaphore(2)
+        self._queue: list[uuid.UUID] = []
+        self._background_tasks: set[asyncio.Task] = set()
+
+    @property
+    def queue_position(self) -> dict[uuid.UUID, int]:
+        return {sid: i + 1 for i, sid in enumerate(self._queue)}
+
+    async def resume_queued_scans(self, session_factory) -> int:
+        """Resume queued/stuck scans from DB after app restart."""
+        from sqlalchemy import select
+
+        async with session_factory() as session:
+            # Reset stuck scans (scanning/analyzing > 5 min) to queued
+            stuck = await session.execute(
+                select(Scan).where(
+                    Scan.status.in_(["scanning", "analyzing"]),
+                )
+            )
+            for scan in stuck.scalars():
+                logger.info("Resetting stuck scan %s (%s)", scan.id, scan.url)
+                scan.status = "queued"
+                scan.completed_at = None
+            await session.commit()
+
+            # Load all queued scans
+            result = await session.execute(
+                select(Scan).where(Scan.status == "queued").order_by(Scan.created_at)
+            )
+            queued_scans = list(result.scalars())
+
+        if not queued_scans:
+            return 0
+
+        logger.info("Resuming %d queued scans from database", len(queued_scans))
+
+        # Process each scan as a background task (keep references to prevent GC)
+        for scan in queued_scans:
+            self._queue.append(scan.id)
+            task = asyncio.create_task(self._resume_single_scan(session_factory, scan.id))
+            self._background_tasks.add(task)
+            task.add_done_callback(self._background_tasks.discard)
+
+        return len(queued_scans)
+
+    async def _resume_single_scan(self, session_factory, scan_id: uuid.UUID) -> None:
+        """Process a single resumed scan with its own session."""
+        async with session_factory() as session:
+            await self.process_scan(session, scan_id)
 
     async def start_scan(self, session: AsyncSession, url: str) -> Scan:
-        scan = Scan(url=url, status="pending")
+        scan = Scan(url=url, status="queued")
         session.add(scan)
         await session.commit()
         await session.refresh(scan)
+        self._queue.append(scan.id)
         return scan
 
     async def process_scan(self, session: AsyncSession, scan_id: uuid.UUID) -> None:
+        async with self._scan_semaphore:
+            if scan_id in self._queue:
+                self._queue.remove(scan_id)
+            try:
+                # Hard timeout: 3 minutes max per scan, prevents infinite hangs
+                await asyncio.wait_for(self._run_scan(session, scan_id), timeout=180)
+            except asyncio.TimeoutError:
+                logger.error("Scan %s timed out after 180s", scan_id)
+                try:
+                    await session.rollback()
+                    scan = await session.get(Scan, scan_id)
+                    if scan and scan.status not in ("done", "error"):
+                        scan.status = "error"
+                        scan.completed_at = datetime.now(timezone.utc)
+                        await session.commit()
+                except Exception:
+                    logger.exception("Failed to mark timed-out scan %s as error", scan_id)
+            except Exception:
+                logger.exception("process_scan outer catch for %s", scan_id)
+                try:
+                    await session.rollback()
+                    scan = await session.get(Scan, scan_id)
+                    if scan and scan.status not in ("done", "error"):
+                        scan.status = "error"
+                        scan.completed_at = datetime.now(timezone.utc)
+                        await session.commit()
+                except Exception:
+                    logger.exception("Failed to mark scan %s as error", scan_id)
+
+    async def _run_scan(self, session: AsyncSession, scan_id: uuid.UUID) -> None:
         scan = await session.get(Scan, scan_id)
         if not scan:
             return
@@ -261,7 +342,7 @@ class ScanOrchestrator:
                 scan.status = "error"
                 await session.commit()
                 return
-            level_distribution = {str(k): level_counter.get(k, 0) for k in range(6)}
+            level_distribution = {str(k): level_counter.get(k, 0) for k in range(5)}
             average_level = round(level_sum / total, 1) if total > 0 else 0
 
             # Weighted average: group by org, classify by impact category
@@ -300,5 +381,12 @@ class ScanOrchestrator:
 
         except Exception:
             logger.exception("Scan processing failed for %s", scan_id)
-            scan.status = "error"
-            await session.commit()
+            try:
+                await session.rollback()
+                scan = await session.get(Scan, scan_id)
+                if scan and scan.status not in ("done", "error"):
+                    scan.status = "error"
+                    scan.completed_at = datetime.now(timezone.utc)
+                    await session.commit()
+            except Exception:
+                logger.exception("Failed to mark scan %s as error in inner handler", scan_id)

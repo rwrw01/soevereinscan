@@ -15,13 +15,16 @@ logger = logging.getLogger(__name__)
 TEMPLATE_PATH = Path(__file__).parent.parent / "templates" / "report_pdf.html"
 
 ALTERNATIVES = {
-    "cloudflare": "Europese alternatieven: Gcore (Luxemburg) en OVHcloud (Frankrijk)",
-    "google": "Europees alternatief: Matomo of Fathom",
-    "akamai": "Europese alternatieven: Gcore (Luxemburg) en OVHcloud (Frankrijk)",
-    "fastly": "Europese alternatieven: Gcore (Luxemburg) en OVHcloud (Frankrijk)",
-    "amazon": "Europese alternatieven: Hetzner (Duitsland), Scaleway (Frankrijk)",
-    "microsoft": "Europese alternatieven: Nextcloud, Collabora",
-    "adobe": "Tip: lettertypen zelf hosten op uw eigen server",
+    "doubleclick": "Tip: advertentietracking verwijderen",
+    "hotjar": "Europees alternatief: Open Web Analytics",
+}
+
+CATEGORY_ALTERNATIVES = {
+    "hosting": "Europese alternatieven: Hetzner (Duitsland), Scaleway (Frankrijk), OVHcloud (Frankrijk)",
+    "cdn": "Europese alternatieven: Gcore (Luxemburg) en OVHcloud (Frankrijk)",
+    "analytics": "Europees alternatief: Matomo of Fathom",
+    "tracking": "Tip: overweeg of deze tracking noodzakelijk is voor uw website",
+    "fonts": "Tip: lettertypen zelf hosten op uw eigen server",
 }
 
 SERVICE_ROLES = {
@@ -64,10 +67,9 @@ COUNTRY_NAMES = {
 }
 
 SOVEREIGNTY_LABELS = {
-    5: "Volledig soeverein",
-    4: "Grotendeels soeverein",
-    3: "Gedeeltelijk soeverein",
-    2: "Beperkt soeverein",
+    4: "Volledig soeverein",
+    3: "Grotendeels soeverein",
+    2: "Gedeeltelijk soeverein",
     1: "Minimaal soeverein",
     0: "Niet soeverein",
 }
@@ -168,11 +170,6 @@ def _build_template_data(scan: Scan) -> dict:
     weighted_sum = 0.0
     weight_total = 0.0
     for key, org in sorted(org_map.items(), key=lambda x: x[1]["level"]):
-        alt = None
-        for kw, text in ALTERNATIVES.items():
-            if kw in key:
-                alt = text
-                break
         is_third_party = any(
             ".".join(h.split(".")[-2:]) != scan_base
             for h in org["hostnames"]
@@ -180,6 +177,15 @@ def _build_template_data(scan: Scan) -> dict:
 
         # Category classification
         cat_key = _classify_org_category(key, org["hostnames"], scan.url)
+
+        # Alternative: provider-specific first, then category-based
+        alt = None
+        for kw, text in ALTERNATIVES.items():
+            if kw in key:
+                alt = text
+                break
+        if alt is None:
+            alt = CATEGORY_ALTERNATIVES.get(cat_key)
         cat_def = pdf_categories.get(cat_key, pdf_categories["other"])
         weight = cat_def["weight"]
         weighted_sum += weight * org["level"]
@@ -217,7 +223,7 @@ def _build_template_data(scan: Scan) -> dict:
             "category_label": cat_def["label"],
             "action": (
                 "U kunt dit wijzigen"
-                if is_third_party and org["level"] < 4
+                if is_third_party and org["level"] < 3
                 else ""
             ),
         })
@@ -235,24 +241,24 @@ def _build_template_data(scan: Scan) -> dict:
 
     # Counts
     total_orgs = len(org_map)
-    eu_count = sum(1 for o in org_map.values() if o["level"] >= 4)
-    non_eu_count = sum(1 for o in org_map.values() if o["level"] <= 2)
+    eu_count = sum(1 for o in org_map.values() if o["level"] >= 3)
+    non_eu_count = sum(1 for o in org_map.values() if o["level"] <= 1)
 
     # Weighted average level (use backend value if available, else compute)
     avg = summary.get("weighted_average_level") or (
         round(weighted_sum / weight_total, 1) if weight_total > 0 else 0
     )
 
-    # Energy label (based on weighted average)
-    if avg >= 4.5:
+    # Energy label (based on weighted average, scale 0-4)
+    if avg >= 3.6:
         label = "A"
-    elif avg >= 4.0:
-        label = "B"
     elif avg >= 3.0:
-        label = "C"
+        label = "B"
     elif avg >= 2.0:
-        label = "D"
+        label = "C"
     elif avg >= 1.0:
+        label = "D"
+    elif avg >= 0.5:
         label = "E"
     else:
         label = "F"
@@ -375,7 +381,7 @@ def _build_recommendations(org_map: dict) -> list[dict]:
     recs = []
     seen: set = set()
     for key, org in org_map.items():
-        if org["level"] >= 4:
+        if org["level"] >= 3:
             continue
         for kw, tip in tips.items():
             if kw in key and kw not in seen:
@@ -394,12 +400,12 @@ def _build_improvement_steps(org_map: dict) -> list[dict]:
         for kw in ["facebook", "pinterest", "doubleclick", "hotjar"]
     )
     has_analytics = any(
-        kw in k and org_map[k]["level"] < 4
+        kw in k and org_map[k]["level"] < 3
         for k in org_map
         for kw in ["google"]
     )
     has_infra = any(
-        kw in k and org_map[k]["level"] < 4
+        kw in k and org_map[k]["level"] < 3
         for k in org_map
         for kw in ["cloudflare", "akamai", "fastly", "amazon", "microsoft"]
     )
@@ -431,7 +437,7 @@ def _build_improvement_steps(org_map: dict) -> list[dict]:
                            "kunnen worden.",
             "effort": "1-6 maanden",
             "who": "Organisatie + Leverancier",
-            "estimated_score": "4.0",
+            "estimated_score": "3.0",
             "estimated_label": "B",
         })
     return steps[:3]
@@ -441,7 +447,7 @@ def _build_questions(org_map: dict, hostname_ips: dict) -> list[str]:
     """Build relevant questions for the information advisor."""
     questions = []
     for org in org_map.values():
-        if org["level"] <= 2:
+        if org["level"] <= 1:
             questions.append(
                 f"Heeft u een verwerkersovereenkomst met {org['name']}? "
                 f"Staan daarin afspraken over subverwerkers buiten de EU?"

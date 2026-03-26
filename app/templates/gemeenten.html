@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gemeentekaart — SoevereinScan</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; }
+
+  header {
+    background: #fff; border-bottom: 1px solid #e2e8f0;
+    padding: 12px 24px; display: flex; align-items: center; gap: 16px;
+    position: relative; z-index: 600;
+  }
+  header h1 { font-size: 1.3rem; font-weight: 800; color: #0f172a; }
+  header h1 a { color: inherit; text-decoration: none; }
+  header h1 span { color: #2ea043; }
+  header .subtitle { font-size: 0.85rem; color: #64748b; flex: 1; }
+  header .nav-link { font-size: 0.85rem; color: #3b82f6; text-decoration: none; }
+  header .nav-link:hover { text-decoration: underline; }
+
+  .header-stats { display: flex; gap: 16px; }
+  .h-stat { text-align: center; padding: 0 12px; }
+  .h-stat .h-val { font-size: 1.2rem; font-weight: 800; }
+  .h-stat .h-lbl { font-size: 0.65rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  #map { width: 100%; height: calc(100vh - 56px); }
+
+  .legend-box {
+    background: #fff; border-radius: 10px; padding: 12px 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12); font-size: 0.8rem; line-height: 1.8;
+  }
+  .legend-box h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 6px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 2px 0; border-radius: 4px; }
+  .legend-item:hover { background: #f1f5f9; }
+  .legend-item.dimmed { opacity: 0.35; }
+  .legend-swatch { width: 18px; height: 18px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); flex-shrink: 0; }
+  .legend-label { font-weight: 500; }
+  .legend-count { color: #94a3b8; margin-left: auto; font-size: 0.75rem; }
+
+  .info-panel {
+    background: #fff; border-radius: 12px; padding: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12); width: 340px;
+    max-height: calc(100vh - 120px); overflow-y: auto;
+  }
+  .info-panel h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 2px; }
+  .info-panel .ip-prov { font-size: 0.8rem; color: #64748b; margin-bottom: 12px; }
+  .info-panel .ip-score-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .info-panel .ip-score-circle {
+    width: 56px; height: 56px; border-radius: 50%; display: flex;
+    align-items: center; justify-content: center; color: #fff;
+    font-size: 1.3rem; font-weight: 800; flex-shrink: 0;
+  }
+  .info-panel .ip-verdict { font-size: 0.95rem; font-weight: 600; }
+  .info-panel .ip-desc { font-size: 0.8rem; color: #64748b; }
+  .info-panel hr { border: none; border-top: 1px solid #e2e8f0; margin: 12px 0; }
+  .info-panel .ip-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.85rem; }
+  .info-panel .ip-row .ip-label { color: #64748b; }
+  .info-panel .ip-row .ip-val { font-weight: 600; }
+  .info-panel .ip-dist { display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 1px; margin: 8px 0; }
+  .info-panel .ip-dist div { height: 100%; }
+  .info-panel .ip-url { font-size: 0.8rem; color: #3b82f6; word-break: break-all; }
+  .info-panel .ip-placeholder { color: #94a3b8; font-size: 0.9rem; text-align: center; padding: 40px 0; }
+
+  .stats-panel {
+    background: #fff; border-radius: 12px; padding: 16px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.12); max-width: 500px;
+  }
+  .stats-panel h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 8px; }
+  .prov-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 0.8rem; cursor: pointer; }
+  .prov-item:hover { background: #f8fafc; }
+  .prov-item .prov-name { width: 110px; font-weight: 500; }
+  .prov-item .prov-bar { flex: 1; height: 8px; background: #f1f5f9; border-radius: 4px; overflow: hidden; }
+  .prov-item .prov-bar-fill { height: 100%; border-radius: 4px; }
+  .prov-item .prov-val { width: 35px; text-align: right; font-weight: 600; font-size: 0.8rem; }
+
+  .leaflet-container { background: #f8fafc; }
+  .leaflet-control-zoom { border: 1px solid #e2e8f0 !important; border-radius: 8px !important; overflow: hidden; }
+  .leaflet-control-zoom a { color: #475569 !important; }
+
+  @media (max-width: 768px) {
+    .info-panel { width: 280px; }
+    .header-stats { display: none; }
+    .stats-panel { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><a href="{{ base }}/">Soeverein<span>Scan</span></a></h1>
+  <span class="subtitle">EU Cloud Sovereignty Framework (SEAL 0-4) — 342 gemeenten</span>
+  <a href="{{ base }}/" class="nav-link">Scan uitvoeren</a>
+  <a href="{{ base }}/hoe-werkt-het" class="nav-link">Hoe werkt het?</a>
+  <div class="header-stats" id="header-stats"></div>
+</header>
+
+<div id="map"></div>
+<div id="colofon" style="position:fixed;bottom:8px;left:50%;transform:translateX(-50%);z-index:600;background:rgba(255,255,255,0.9);border-radius:8px;padding:6px 16px;font-size:0.7rem;color:#64748b;box-shadow:0 1px 4px rgba(0,0,0,0.08);text-align:center;pointer-events:auto">
+  Gescand met <a href="https://scan.publicvibes.nl" style="color:#3b82f6">scan.publicvibes.nl</a> | Licentie <a href="https://joinup.ec.europa.eu/licence/eupl-text-eupl-12" style="color:#3b82f6">EUPL-1.2</a> | Data: 26 maart 2026
+</div>
+
+<script>
+const BASE = document.querySelector('[data-base]')?.dataset.base || '{{ base }}';
+const GEOJSON_URL = 'https://cartomap.github.io/nl/wgs84/gemeente_2025.geojson';
+const GEOJSON_FALLBACK = 'https://cartomap.github.io/nl/wgs84/gemeente_2024.geojson';
+
+const NAME_MAP = {
+  "'s-Gravenhage": "Den Haag",
+  "Hengelo (O.)": "Hengelo",
+  "Beek (L.)": "Beek",
+  "Middelburg (Z.)": "Middelburg",
+  "Rijswijk (ZH.)": "Rijswijk",
+  "Stein (L.)": "Stein",
+  "Laren (NH.)": "Laren",
+  "Bergen (L.)": "Bergen (L)",
+  "Bergen (NH.)": "Bergen (NH)",
+};
+
+const SEAL = [
+  { level: 0, label: 'Geen soevereiniteit',       color: '#dc2626', textColor: '#fff' },
+  { level: 1, label: 'Juridische soevereiniteit',  color: '#f97316', textColor: '#fff' },
+  { level: 2, label: 'Data soevereiniteit',        color: '#eab308', textColor: '#1e293b' },
+  { level: 3, label: 'Digitale weerbaarheid',      color: '#22c55e', textColor: '#fff' },
+  { level: 4, label: 'Volledig soeverein',         color: '#15803d', textColor: '#fff' },
+];
+
+function sealLevel(score) {
+  if (score >= 3.5) return 4;
+  if (score >= 2.5) return 3;
+  if (score >= 1.5) return 2;
+  if (score >= 0.5) return 1;
+  return 0;
+}
+
+function sealColor(score) { return SEAL[sealLevel(score)].color; }
+
+function matchName(geoName) { return NAME_MAP[geoName] || geoName; }
+
+function fuzzyFind(scores, geoName) {
+  const mapped = matchName(geoName);
+  let found = scores.find(s => s.name === mapped);
+  if (!found) {
+    const simp = geoName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    found = scores.find(s => s.name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === simp);
+  }
+  return found;
+}
+
+async function init() {
+  let geo;
+  try {
+    const r = await fetch(GEOJSON_URL);
+    if (!r.ok) throw 0;
+    geo = await r.json();
+  } catch { geo = await (await fetch(GEOJSON_FALLBACK)).json(); }
+
+  const scores = await fetch(BASE + '/api/gemeenten/scores').then(r => r.json());
+
+  const allScores = scores.filter(s => s.score != null).map(s => s.score);
+  const counts = [0,0,0,0,0];
+  allScores.forEach(s => counts[sealLevel(s)]++);
+
+  document.getElementById('header-stats').innerHTML = SEAL.map((s, i) =>
+    `<div class="h-stat"><div class="h-val" style="color:${s.color}">${counts[i]}</div><div class="h-lbl">SEAL-${i}</div></div>`
+  ).join('');
+
+  const map = L.map('map', { center: [52.2, 5.5], zoom: 8, minZoom: 7, maxZoom: 14, attributionControl: false });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', { maxZoom: 19, opacity: 0.3 }).addTo(map);
+
+  let selectedLayer = null;
+  let activeFilter = null;
+
+  function styleFeature(feature) {
+    const data = fuzzyFind(scores, feature.properties.statnaam);
+    const score = data ? data.score : null;
+    const color = score != null ? sealColor(score) : '#cbd5e1';
+    const dimmed = activeFilter !== null && score != null && sealLevel(score) !== activeFilter;
+    return { fillColor: color, fillOpacity: dimmed ? 0.15 : 0.85, weight: 0.8, color: '#94a3b8', opacity: dimmed ? 0.3 : 0.6 };
+  }
+
+  const geoLayer = L.geoJSON(geo, {
+    style: styleFeature,
+    onEachFeature: function(feature, layer) {
+      const data = fuzzyFind(scores, feature.properties.statnaam);
+      layer.on('mouseover', function() {
+        if (this !== selectedLayer) { this.setStyle({ weight: 2, color: '#475569', fillOpacity: 0.95 }); this.bringToFront(); }
+      });
+      layer.on('mouseout', function() {
+        if (this !== selectedLayer) geoLayer.resetStyle(this);
+      });
+      layer.on('click', function(e) {
+        L.DomEvent.stopPropagation(e);
+        if (selectedLayer) geoLayer.resetStyle(selectedLayer);
+        selectedLayer = this;
+        this.setStyle({ weight: 2.5, color: '#1e293b', fillOpacity: 0.95 });
+        this.bringToFront();
+        showInfoPanel(data, feature.properties.statnaam);
+        map.fitBounds(this.getBounds(), { padding: [50, 50], maxZoom: 11 });
+      });
+    }
+  }).addTo(map);
+
+  map.fitBounds(geoLayer.getBounds(), { padding: [20, 20] });
+
+  // Info panel
+  const infoCtrl = L.control({ position: 'topright' });
+  infoCtrl.onAdd = function() {
+    const d = L.DomUtil.create('div', 'info-panel'); d.id = 'info-panel';
+    d.innerHTML = '<div class="ip-placeholder">Klik op een gemeente voor details</div>';
+    L.DomEvent.disableScrollPropagation(d); L.DomEvent.disableClickPropagation(d);
+    return d;
+  };
+  infoCtrl.addTo(map);
+
+  function showInfoPanel(data, geoName) {
+    const panel = document.getElementById('info-panel');
+    if (!data) { panel.innerHTML = `<h2>${geoName}</h2><p style="color:#94a3b8;margin-top:12px">Geen scandata beschikbaar</p>`; return; }
+    const seal = sealLevel(data.score);
+    const s = SEAL[seal];
+    const ld = data.level_distribution || {};
+    const total = Object.values(ld).reduce((a,b) => a+b, 0) || 1;
+    panel.innerHTML = `
+      <h2>${data.name}</h2>
+      <div class="ip-prov">${data.provincie || ''}</div>
+      <div class="ip-score-row">
+        <div class="ip-score-circle" style="background:${s.color}">${Math.round(data.score)}</div>
+        <div>
+          <div class="ip-verdict" style="color:${s.color}">SEAL-${seal}: ${s.label}</div>
+          <div class="ip-desc">Exacte score: ${data.score.toFixed(2)}</div>
+        </div>
+      </div>
+      <hr>
+      <div class="ip-row"><span class="ip-label">Totaal hostnames</span><span class="ip-val">${data.total_hostnames}</span></div>
+      <div class="ip-row"><span class="ip-label">Third-party</span><span class="ip-val">${data.third_party_hostnames}</span></div>
+      <div class="ip-row"><span class="ip-label">First-party</span><span class="ip-val">${data.total_hostnames - data.third_party_hostnames}</span></div>
+      <hr>
+      <div style="font-size:0.8rem;font-weight:600;margin-bottom:4px">Resource verdeling</div>
+      <div class="ip-dist">
+        ${[4,3,2,1,0].map(l => { const c = ld[l]||0; const p = (c/total)*100; return p>0 ? `<div style="width:${p}%;background:${SEAL[l].color}" title="SEAL-${l}: ${c}"></div>` : ''; }).join('')}
+      </div>
+      <div style="display:flex;gap:8px;font-size:0.7rem;color:#94a3b8;flex-wrap:wrap">
+        ${[4,3,2,1,0].map(l => { const c = ld[l]||0; return c>0 ? `<span style="color:${SEAL[l].color}">S${l}:${c}</span>` : ''; }).filter(Boolean).join('')}
+      </div>
+      <hr>
+      <a href="${data.final_url||'#'}" target="_blank" class="ip-url">${(data.final_url||'').replace('https://','').replace(/\/$/,'')}</a>
+    `;
+  }
+
+  // Legend
+  const legCtrl = L.control({ position: 'bottomleft' });
+  legCtrl.onAdd = function() {
+    const d = L.DomUtil.create('div', 'legend-box');
+    L.DomEvent.disableScrollPropagation(d); L.DomEvent.disableClickPropagation(d);
+    d.innerHTML = '<h4>SEAL-niveau</h4>' + SEAL.map((s,i) =>
+      `<div class="legend-item" data-level="${i}"><div class="legend-swatch" style="background:${s.color}"></div><span class="legend-label">SEAL-${i} ${s.label}</span><span class="legend-count">${counts[i]}</span></div>`
+    ).reverse().join('');
+    d.querySelectorAll('.legend-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const level = parseInt(item.dataset.level);
+        if (activeFilter === level) { activeFilter = null; d.querySelectorAll('.legend-item').forEach(i => i.classList.remove('dimmed')); }
+        else { activeFilter = level; d.querySelectorAll('.legend-item').forEach(i => i.classList.toggle('dimmed', parseInt(i.dataset.level) !== level)); }
+        geoLayer.setStyle(styleFeature);
+      });
+    });
+    return d;
+  };
+  legCtrl.addTo(map);
+
+  // Province panel
+  const provCtrl = L.control({ position: 'bottomright' });
+  provCtrl.onAdd = function() {
+    const d = L.DomUtil.create('div', 'stats-panel');
+    L.DomEvent.disableScrollPropagation(d); L.DomEvent.disableClickPropagation(d);
+    const provData = {};
+    scores.forEach(s => { if (!s.provincie) return; if (!provData[s.provincie]) provData[s.provincie]=[]; provData[s.provincie].push(s.score); });
+    const provList = Object.entries(provData).map(([n,sc]) => ({name:n, avg:sc.reduce((a,b)=>a+b,0)/sc.length, count:sc.length})).sort((a,b) => b.avg - a.avg);
+    d.innerHTML = '<h4>Provincies</h4>' + provList.map(p =>
+      `<div class="prov-item" data-prov="${p.name}"><span class="prov-name">${p.name}</span><div class="prov-bar"><div class="prov-bar-fill" style="width:${(p.avg/4)*100}%;background:${SEAL[sealLevel(p.avg)].color}"></div></div><span class="prov-val" style="color:${SEAL[sealLevel(p.avg)].color}">${Math.round(p.avg)}</span></div>`
+    ).join('');
+    d.querySelectorAll('.prov-item').forEach(item => {
+      item.addEventListener('mouseenter', () => {
+        const prov = item.dataset.prov;
+        geoLayer.eachLayer(layer => {
+          const dt = fuzzyFind(scores, layer.feature.properties.statnaam);
+          if (dt && dt.provincie === prov) { layer.setStyle({ weight:2, color:'#1e293b', fillOpacity:0.95 }); layer.bringToFront(); }
+          else layer.setStyle({ fillOpacity:0.2, opacity:0.2 });
+        });
+      });
+      item.addEventListener('mouseleave', () => {
+        geoLayer.setStyle(styleFeature);
+        if (selectedLayer) { selectedLayer.setStyle({ weight:2.5, color:'#1e293b', fillOpacity:0.95 }); selectedLayer.bringToFront(); }
+      });
+    });
+    return d;
+  };
+  provCtrl.addTo(map);
+
+  map.on('click', () => {
+    if (selectedLayer) { geoLayer.resetStyle(selectedLayer); selectedLayer = null; document.getElementById('info-panel').innerHTML = '<div class="ip-placeholder">Klik op een gemeente voor details</div>'; }
+  });
+}
+
+init();
+</script>
+</body>
+</html>
